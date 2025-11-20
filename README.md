@@ -48,3 +48,9 @@ In the future, we aim to expand its functionality to include working with cross-
 ## Disclaimer
 
 **I do not hold any responsibility for any direct or indirect losses, damages, or inconveniences that may arise from your use of this bot. Your use of this bot is at your own risk.**
+
+## Contact 
+
+Need help, have questions, or want to collaborate? Reach out!  
+
+- **Telegram**: [@soladity](https://t.me/soladity)  
