@@ -1,1 +1,9 @@
-s
+__.pyc
+__pycache__/
+dist/
+build/
+*.egg-info/
+log.log
+.DS_Store
+sidecar/node_modules/
+sidecar/.env

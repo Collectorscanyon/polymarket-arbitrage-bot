@@ -12,7 +12,9 @@ setup(
     url="https://github.com/P-x-J/Polymarket-Arbitrage-Bot",
     packages=find_packages(),                     
     install_requires=[
-        "requests", "web3", #etc
+        "requests", 
+        "web3",
+        "pyyaml",  # For wallets.yaml fleet config
     ],
     python_requires=">=3.8",
     classifiers=[

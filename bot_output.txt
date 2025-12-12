@@ -1,0 +1,4 @@
+Set minimum price gap number: 3.0 (from env)
+[BOT] BTC15 Loop enabled: max_bracket=$10.0, trigger<=0.35
+[BOT] Starting with caps: 1/loop, 10/hour, MIN_EDGE_BPS=38.0
+[BOT] Loop sleep: 9s, Scan interval: 30s

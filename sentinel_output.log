@@ -1,0 +1,8 @@
+<frozen runpy>:128: RuntimeWarning: 'perps.sentinel' found in sys.modules after import of package 'perps', but prior to execution of 'perps.sentinel'; this may result in unpredictable behaviour
+C:\Users\micha\Downloads\New folder (2)\polymarket-arbitrage-bot\perps\sentinel.py:58: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  self.last_loss_reset_date = datetime.utcnow().date()
+C:\Users\micha\Downloads\New folder (2)\polymarket-arbitrage-bot\perps\sentinel.py:66: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  today = datetime.utcnow().date()
+C:\Users\micha\Downloads\New folder (2)\polymarket-arbitrage-bot\perps\sentinel.py:414: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = datetime.utcnow().strftime("%H:%M:%S UTC")
+

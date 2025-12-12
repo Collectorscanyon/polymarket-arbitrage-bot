@@ -1,0 +1,462 @@
+WARNING:root:[BTC15] Failed to load states from sidecar: HTTPConnectionPool(host='localhost', port=4000): Read timed out. (read timeout=5)
+====================================================================================================
+  BTC 15m Market Matcher Debug
+====================================================================================================
+  BTC15_MARKET_SUBSTR: 'btc-up-or-down-15m'
+  MIN_VOLUME_USDC:     $100
+  BTC15_ENABLED:       True
+====================================================================================================
+
+[1/3] Fetching from gamma-api.polymarket.com/markets...
+       ΓåÆ Got 500 markets
+[2/3] Fetching from gamma-api.polymarket.com/events...
+       ΓåÆ Got 1912 markets from events
+[3/3] Combined unique markets: 1912
+
+====================================================================================================
+  BTC / BITCOIN / UP-OR-DOWN CANDIDATES (potential matches)
+====================================================================================================
+
+Found 36 BTC-related candidates:
+
+  slug: will-bitcoin-reach-140000-by-december-31-2025-258-893
+  question: Will Bitcoin reach $140,000 by December 31, 2025?
+  volume: $5,494,487
+  minutes_to_expiry: N/A
+  endDate: None
+
+  slug: will-bitcoin-reach-170000-by-december-31-2025-215
+  question: Will Bitcoin reach $170,000 by December 31, 2025?
+  volume: $4,487,852
+  minutes_to_expiry: N/A
+  endDate: None
+
+  slug: microstrategy-sells-any-bitcoin-by-march-31-2026
+  question: MicroStrategy sells any Bitcoin by March 31, 2026?
+  volume: $96,382
+  minutes_to_expiry: N/A
+  endDate: None
+
+  slug: will-trump-media-buy-more-bitcoin-in-2025
+  question: Will Trump Media buy more Bitcoin in 2025?
+  volume: $58,877
+  minutes_to_expiry: N/A
+  endDate: 2025-12-31T00:00:00Z
+
+  slug: will-satoshi-move-any-bitcoin-in-2025
+  question: Will Satoshi move any Bitcoin in 2025?
+  volume: $16,882,749
+  minutes_to_expiry: N/A
+  endDate: 2025-12-31T00:00:00Z
+
+  slug: will-bitcoin-outperform-gold-in-july
+  question: Will Bitcoin outperform Gold in 2025?
+  volume: $480,610
+  minutes_to_expiry: N/A
+  endDate: 2025-12-31T00:00:00Z
+
+  slug: will-china-unban-bitcoin-in-2025
+  question: Will China unban Bitcoin in 2025?
+  volume: $1,617,882
+  minutes_to_expiry: N/A
+  endDate: 2025-12-31T00:00:00Z
+
+  slug: will-btc-require-a-hard-fork-due-to-hacking-by-ai-or-other-forces
+  question: Will Bitcoin hard fork before 2026?
+  volume: $11,447
+  minutes_to_expiry: N/A
+  endDate: 2025-12-31T05:00:00Z
+
+  slug: bitcoin-more-valuable-than-any-company-in-2025
+  question: Bitcoin more valuable than any company in 2025?
+  volume: $58,660
+  minutes_to_expiry: N/A
+  endDate: 2025-12-31T12:00:00Z
+
+  slug: senate-passes-bill-to-purchase-1m-bitcoin-in-2025
+  question: Senate passes bill to purchase 1m Bitcoin in 2025?
+  volume: $59,421
+  minutes_to_expiry: N/A
+  endDate: 2025-12-31T12:00:00Z
+
+  slug: will-microstrategy-be-forced-to-liquidate-bitcoin-holdings-in-2025
+  question: Will MicroStrategy be forced to liquidate Bitcoin holdings in 2025?
+  volume: $398,941
+  minutes_to_expiry: N/A
+  endDate: 2025-12-31T12:00:00Z
+
+  slug: texas-strategic-bitcoin-reserve-act-signed-in-2025
+  question: Texas Strategic Bitcoin Reserve Act (H.B. 1598) signed in 2025?
+  volume: $204,357
+  minutes_to_expiry: N/A
+  endDate: 2025-12-31T12:00:00Z
+
+  slug: us-national-bitcoin-reserve-in-2025
+  question: US national Bitcoin reserve in 2025?
+  volume: $5,165,396
+  minutes_to_expiry: N/A
+  endDate: 2025-12-31T12:00:00Z
+
+  slug: microstrategy-sell-any-bitcoin-in-2025
+  question: MicroStrategy sells any Bitcoin in 2025?
+  volume: $2,857,494
+  minutes_to_expiry: N/A
+  endDate: 2025-12-31T12:00:00Z
+
+  slug: will-bitcoin-dip-to-20000-by-december-31-2025-942-621-278-695-321-896-769-417-957-733-354-361-233-126-159
+  question: Will Bitcoin dip to $20,000 by December 31, 2025?
+  volume: $2,804,759
+  minutes_to_expiry: N/A
+  endDate: 2025-12-31T12:00:00Z
+
+  slug: will-bitcoin-dip-to-50000-by-december-31-2025-391-715-682-587-692-994-786-318-267-857-157-791-189-328-186
+  question: Will Bitcoin dip to $50,000 by December 31, 2025?
+  volume: $3,785,667
+  minutes_to_expiry: N/A
+  endDate: 2025-12-31T12:00:00Z
+
+  slug: will-bitcoin-dip-to-70000-by-december-31-2025-193-726-878-775-359-968-264-727-793-714-257-318-569-865-147
+  question: Will Bitcoin dip to $70,000 by December 31, 2025?
+  volume: $6,165,110
+  minutes_to_expiry: N/A
+  endDate: 2025-12-31T12:00:00Z
+
+  slug: will-bitcoin-reach-130000-by-december-31-2025-911-832
+  question: Will Bitcoin reach $130,000 by December 31, 2025?
+  volume: $10,436,925
+  minutes_to_expiry: N/A
+  endDate: 2025-12-31T12:00:00Z
+
+  slug: will-bitcoin-reach-150000-by-december-31-2025-188
+  question: Will Bitcoin reach $150,000 by December 31, 2025?
+  volume: $13,161,990
+  minutes_to_expiry: N/A
+  endDate: 2025-12-31T12:00:00Z
+
+  slug: will-bitcoin-reach-200000-by-december-31-2025
+  question: Will Bitcoin reach $200,000 by December 31, 2025?
+  volume: $11,310,896
+  minutes_to_expiry: N/A
+  endDate: 2025-12-31T12:00:00Z
+
+  slug: will-bitcoin-reach-250000-by-december-31-2025
+  question: Will Bitcoin reach $250,000 by December 31, 2025?
+  volume: $6,549,025
+  minutes_to_expiry: N/A
+  endDate: 2025-12-31T12:00:00Z
+
+  slug: will-bitcoin-reach-1000000-by-december-31-2025
+  question: Will Bitcoin reach $1,000,000 by December 31, 2025?
+  volume: $9,477,067
+  minutes_to_expiry: N/A
+  endDate: 2025-12-31T12:00:00Z
+
+  slug: will-the-us-government-sell-bitcoin-by-december-31
+  question: Will the US Government sell Bitcoin by December 31?
+  volume: $8,315
+  minutes_to_expiry: N/A
+  endDate: 2025-12-31T23:00:00Z
+
+  slug: will-bitcoin-dip-to-75000-by-december-31-2025-515
+  question: Will Bitcoin dip to $75,000 by December 31, 2025?
+  volume: $337,476
+  minutes_to_expiry: N/A
+  endDate: 2026-01-01T05:00:00Z
+
+  slug: will-bitcoin-dip-to-65000-by-december-31-2025-724
+  question: Will Bitcoin dip to $65,000 by December 31, 2025?
+  volume: $479,660
+  minutes_to_expiry: N/A
+  endDate: 2026-01-01T05:00:00Z
+
+  slug: will-bitcoin-reach-115000-by-december-31-2025-746
+  question: Will Bitcoin reach $115,000 by December 31, 2025?
+  volume: $642,469
+  minutes_to_expiry: N/A
+  endDate: 2026-01-01T05:00:00Z
+
+  slug: will-bitcoin-reach-105000-by-december-31-2025-159-849-483-977
+  question: Will Bitcoin reach $105,000 by December 31, 2025?
+  volume: $0
+  minutes_to_expiry: N/A
+  endDate: 2026-01-01T05:00:00Z
+
+  slug: will-bitcoin-reach-95000-by-december-31-2025-818-596-821-318-841
+  question: Will Bitcoin reach $95,000 by December 31, 2025?
+  volume: $970,808
+  minutes_to_expiry: N/A
+  endDate: 2026-01-01T05:00:00Z
+
+  slug: will-bitcoin-reach-105000-by-december-31-2025-784-751
+  question: Will Bitcoin reach $105,000 by December 31, 2025?
+  volume: $782,197
+  minutes_to_expiry: N/A
+  endDate: 2026-01-01T05:00:00Z
+
+  slug: will-bitcoin-reach-120000-by-december-31-2025-472-972
+  question: Will Bitcoin reach $120,000 by December 31, 2025?
+  volume: $3,088,250
+  minutes_to_expiry: N/A
+  endDate: 2026-01-01T05:00:00Z
+
+  slug: will-bitcoin-reach-110000-by-december-31-2025-793
+  question: Will Bitcoin reach $110,000 by December 31, 2025?
+  volume: $2,704,437
+  minutes_to_expiry: N/A
+  endDate: 2026-01-01T05:00:00Z
+
+  slug: will-bitcoin-reach-100000-by-december-31-2025-213-146-883-729-282
+  question: Will Bitcoin reach $100,000 by December 31, 2025?
+  volume: $3,756,259
+  minutes_to_expiry: N/A
+  endDate: 2026-01-01T05:00:00Z
+
+  slug: will-bitcoin-dip-to-80000-by-december-31-2025-118-573-457-488-883-987-884-891-557
+  question: Will Bitcoin dip to $80,000 by December 31, 2025?
+  volume: $3,541,369
+  minutes_to_expiry: N/A
+  endDate: 2026-01-01T05:00:00Z
+
+  slug: microstrategy-sells-any-bitcoin-by-june-30-2026
+  question: MicroStrategy sells any Bitcoin by June 30, 2026?
+  volume: $70,579
+  minutes_to_expiry: N/A
+  endDate: 2026-07-01T04:00:00Z
+
+  slug: microstrategy-sells-any-bitcoin-by-december-31-2026
+  question: MicroStrategy sells any Bitcoin by December 31, 2026?
+  volume: $7,051
+  minutes_to_expiry: N/A
+  endDate: 2026-07-01T04:00:00Z
+
+  slug: will-bitcoin-hit-1m-before-gta-vi-872
+  question: Will bitcoin hit $1m before GTA VI?
+  volume: $2,353,829
+  minutes_to_expiry: N/A
+  endDate: 2026-07-31T12:00:00Z
+
+====================================================================================================
+  FULL MATCHES (all BTC15 criteria passed)
+====================================================================================================
+  (No markets match all BTC15 criteria)
+
+====================================================================================================
+  PARTIAL MATCHES (substring match but failed volume/expiry)
+====================================================================================================
+  (No partial matches)
+
+====================================================================================================
+  ALL MARKETS (first 50 by volume)
+====================================================================================================
+  1. xi-jinping-out-in-2025
+     Q: Xi Jinping out in 2025?
+     Vol: $65,366,327 | End: 2025-12-31T23:55:00Z
+
+  2. will-the-miami-dolphins-win-super-bowl-2026
+     Q: Will the Miami Dolphins win Super Bowl 2026?
+     Vol: $63,937,148 | End: 2026-02-08T12:00:00Z
+
+  3. russia-x-ukraine-ceasefire-in-2025
+     Q: Russia x Ukraine ceasefire in 2025?
+     Vol: $51,848,214 | End: 2025-12-31T12:00:00Z
+
+  4. will-the-carolina-panthers-win-super-bowl-2026
+     Q: Will the Carolina Panthers win Super Bowl 2026?
+     Vol: $50,255,011 | End: 2026-02-08T12:00:00Z
+
+  5. will-the-cincinnati-bengals-win-super-bowl-2026
+     Q: Will the Cincinnati Bengals win Super Bowl 2026?
+     Vol: $38,320,271 | End: 2026-02-08T12:00:00Z
+
+  6. will-leeds-win-the-202526-english-premier-league
+     Q: Will Leeds win the 2025ΓÇô26 English Premier League?
+     Vol: $29,172,265 | End: 2026-05-27T00:00:00Z
+
+  7. will-saudi-aramco-be-the-largest-company-in-the-wo
+     Q: Will Saudi Aramco be the largest company in the world by mar
+     Vol: $24,792,519 | End: 2025-12-31T12:00:00Z
+
+  8. will-chelsea-clinton-win-the-2028-democratic-presi
+     Q: Will Chelsea Clinton win the 2028 Democratic presidential no
+     Vol: $23,188,197 | End: 2028-11-07T00:00:00Z
+
+  9. will-phil-murphy-win-the-2028-democratic-president
+     Q: Will Phil Murphy win the 2028 Democratic presidential nomina
+     Vol: $21,453,546 | End: 2028-11-07T00:00:00Z
+
+ 10. will-lebron-james-win-the-2028-us-presidential-ele
+     Q: Will LeBron James win the 2028 US Presidential Election?
+     Vol: $19,823,377 | End: 2028-11-07T00:00:00Z
+
+ 11. will-andrew-yang-win-the-2028-democratic-president
+     Q: Will Andrew Yang win the 2028 Democratic presidential nomina
+     Vol: $19,230,019 | End: 2028-11-07T00:00:00Z
+
+ 12. will-lebron-james-win-the-2028-democratic-presiden
+     Q: Will LeBron James win the 2028 Democratic presidential nomin
+     Vol: $19,106,406 | End: 2028-11-07T00:00:00Z
+
+ 13. will-hillary-clinton-win-the-2028-democratic-presi
+     Q: Will Hillary Clinton win the 2028 Democratic presidential no
+     Vol: $18,436,144 | End: 2028-11-07T00:00:00Z
+
+ 14. will-zohran-mamdani-win-the-2028-democratic-presid
+     Q: Will Zohran Mamdani win the 2028 Democratic presidential nom
+     Vol: $18,177,540 | End: 2028-11-07T00:00:00Z
+
+ 15. will-mrbeast-win-the-2028-democratic-presidential-
+     Q: Will MrBeast win the 2028 Democratic presidential nomination
+     Vol: $17,470,239 | End: 2028-11-07T00:00:00Z
+
+ 16. will-liz-cheney-win-the-2028-democratic-presidenti
+     Q: Will Liz Cheney win the 2028 Democratic presidential nominat
+     Vol: $17,366,936 | End: 2028-11-07T00:00:00Z
+
+ 17. will-satoshi-move-any-bitcoin-in-2025
+     Q: Will Satoshi move any Bitcoin in 2025?
+     Vol: $16,882,749 | End: 2025-12-31T00:00:00Z
+
+ 18. will-oprah-winfrey-win-the-2028-democratic-preside
+     Q: Will Oprah Winfrey win the 2028 Democratic presidential nomi
+     Vol: $16,680,891 | End: 2028-11-07T00:00:00Z
+
+ 19. maduro-out-in-2025-411
+     Q: Maduro out in 2025?
+     Vol: $16,335,481 | End: 2025-12-31T12:00:00Z
+
+ 20. will-olympiakos-win-the-202526-champions-league
+     Q: Will Olympiakos win the 2025ΓÇô26 Champions League?
+     Vol: $16,295,928 | End: 2026-05-31T00:00:00Z
+
+ 21. will-george-clooney-win-the-2028-democratic-presid
+     Q: Will George Clooney win the 2028 Democratic presidential nom
+     Vol: $15,606,380 | End: 2028-11-07T00:00:00Z
+
+ 22. will-bernie-sanders-win-the-2028-democratic-presid
+     Q: Will Bernie Sanders win the 2028 Democratic presidential nom
+     Vol: $15,345,463 | End: 2028-11-07T00:00:00Z
+
+ 23. will-beto-orourke-win-the-2028-democratic-presiden
+     Q: Will Beto OΓÇÖRourke win the 2028 Democratic presidential nomi
+     Vol: $15,068,103 | End: 2028-11-07T00:00:00Z
+
+ 24. will-captain-america-new-world-order-be-the-top-gr
+     Q: Will Captain America: Brave New World be the top grossing mo
+     Vol: $14,683,316 | End: 2025-12-31T12:00:00Z
+
+ 25. will-person-a-win-the-2028-democratic-presidential
+     Q: Will Hunter Biden win the 2028 Democratic presidential nomin
+     Vol: $14,678,129 | End: 2028-11-07T00:00:00Z
+
+ 26. will-thunderbolts-be-the-top-grossing-movie-of-202
+     Q: Will Thunderbolts be the top grossing movie of 2025?
+     Vol: $14,621,020 | End: 2025-12-31T12:00:00Z
+
+ 27. will-the-chicago-bulls-win-the-2026-nba-finals
+     Q: Will the Chicago Bulls win the 2026 NBA Finals?
+     Vol: $14,195,857 | End: 2026-07-01T00:00:00Z
+
+ 28. will-tim-walz-win-the-2028-us-presidential-electio
+     Q: Will Tim Walz win the 2028 US Presidential Election?
+     Vol: $14,163,581 | End: 2028-11-07T00:00:00Z
+
+ 29. will-how-to-train-your-dragon-be-the-top-grossing-
+     Q: Will How to Train Your Dragon be the top grossing movie of 2
+     Vol: $13,888,280 | End: 2025-12-31T12:00:00Z
+
+ 30. will-the-dallas-cowboys-win-super-bowl-2026
+     Q: Will the Dallas Cowboys win Super Bowl 2026?
+     Vol: $13,801,433 | End: 2026-02-08T12:00:00Z
+
+ 31. will-the-fantastic-four-first-steps-be-the-top-gro
+     Q: Will The Fantastic Four: First Steps be the top grossing mov
+     Vol: $13,533,521 | End: 2025-12-31T12:00:00Z
+
+ 32. will-ethereum-hit-5000-by-december-31-796-376
+     Q: Will Ethereum hit $5,000 by December 31?
+     Vol: $13,452,391 | End: 2025-12-31T12:00:00Z
+
+ 33. will-greg-abbott-win-the-2028-us-presidential-elec
+     Q: Will Greg Abbott win the 2028 US Presidential Election?
+     Vol: $13,212,208 | End: 2028-11-07T00:00:00Z
+
+ 34. will-bitcoin-reach-150000-by-december-31-2025-188
+     Q: Will Bitcoin reach $150,000 by December 31, 2025?
+     Vol: $13,161,990 | End: 2025-12-31T12:00:00Z
+
+ 35. will-kim-kardashian-win-the-2028-democratic-presid
+     Q: Will Kim Kardashian win the 2028 Democratic presidential nom
+     Vol: $12,689,937 | End: 2028-11-07T00:00:00Z
+
+ 36. will-tulsi-gabbard-win-the-2028-us-presidential-el
+     Q: Will Tulsi Gabbard win the 2028 US Presidential Election?
+     Vol: $12,670,736 | End: 2028-11-07T00:00:00Z
+
+ 37. will-slavia-pragu-win-the-202526-champions-league
+     Q: Will Slavia Pragu win the 2025ΓÇô26 Champions League?
+     Vol: $11,968,117 | End: 2026-05-31T00:00:00Z
+
+ 38. will-everton-win-the-202526-english-premier-league
+     Q: Will Everton win the 2025ΓÇô26 English Premier League?
+     Vol: $11,722,633 | End: 2026-05-27T00:00:00Z
+
+ 39. will-trump-remove-jerome-powell
+     Q: Jerome Powell out as Fed Chair in 2025?
+     Vol: $11,512,580 | End: 2025-12-31T12:00:00Z
+
+ 40. will-raul-perestrello-win-the-2026-portugal-presid
+     Q: Will Raul Perestrello win the 2026 Portugal presidential ele
+     Vol: $11,345,960 | End: 2026-01-25T14:00:00Z
+
+ 41. will-the-minnesota-vikings-win-super-bowl-2026
+     Q: Will the Minnesota Vikings win Super Bowl 2026?
+     Vol: $11,338,363 | End: 2026-02-08T12:00:00Z
+
+ 42. will-bitcoin-reach-200000-by-december-31-2025
+     Q: Will Bitcoin reach $200,000 by December 31, 2025?
+     Vol: $11,310,896 | End: 2025-12-31T12:00:00Z
+
+ 43. will-vivek-ramaswamy-win-the-2028-us-presidential-
+     Q: Will Vivek Ramaswamy win the 2028 US Presidential Election?
+     Vol: $11,228,520 | End: 2028-11-07T00:00:00Z
+
+ 44. will-brighton-win-the-202526-english-premier-leagu
+     Q: Will Brighton win the 2025ΓÇô26 English Premier League?
+     Vol: $11,168,293 | End: 2026-05-27T00:00:00Z
+
+ 45. will-tesla-be-the-largest-company-in-the-world-by-
+     Q: Will Tesla be the largest company in the world by market cap
+     Vol: $11,155,378 | End: 2025-12-31T12:00:00Z
+
+ 46. will-jurassic-world-rebirth-be-the-top-grossing-mo
+     Q: Will Jurassic World: Rebirth be the top grossing movie of 20
+     Vol: $10,665,161 | End: 2025-12-31T12:00:00Z
+
+ 47. us-recession-in-2025
+     Q: US recession in 2025?
+     Vol: $10,647,824 | End: 2026-02-28T12:00:00Z
+
+ 48. will-barack-obama-win-the-2028-democratic-presiden
+     Q: Will Barack Obama win the 2028 Democratic presidential nomin
+     Vol: $10,621,932 | End: 2028-11-07T00:00:00Z
+
+ 49. will-bitcoin-reach-130000-by-december-31-2025-911-
+     Q: Will Bitcoin reach $130,000 by December 31, 2025?
+     Vol: $10,436,925 | End: 2025-12-31T12:00:00Z
+
+ 50. will-lebron-james-be-times-person-of-the-year-for-
+     Q: Will LeBron James be TIME's Person of the Year for 2025?
+     Vol: $10,104,855 | End: 2025-12-31T12:00:00Z
+
+====================================================================================================
+  SUMMARY
+====================================================================================================
+  Total markets scanned:   1912
+  BTC-ish candidates:      36
+  Full BTC15 matches:      0
+  Partial matches:         0
+
+  ≡ƒÆí TIP: Found BTC candidates but no full matches.
+     Check the candidate slugs above and update BTC15_MARKET_SUBSTR in .env
+     Current: 'btc-up-or-down-15m'
+     Suggested: 'will-bitcoin-reach-140000'

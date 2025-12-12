@@ -1,0 +1,30 @@
+[
+  {
+    "market_slug": "will-bitcoin-hit-100k-2025",
+    "side": "YES",
+    "confidence": 0.85,
+    "size_bucket": "medium",
+    "reason": "Strong momentum, breaking key resistance levels"
+  },
+  {
+    "market_slug": "us-presidential-election-2024-winner",
+    "side": "NO",
+    "confidence": 0.72,
+    "size_bucket": "small",
+    "reason": "Polling divergence detected"
+  },
+  {
+    "market_slug": "fed-rate-cut-june-2025",
+    "side": "YES",
+    "confidence": 0.55,
+    "size_bucket": "small",
+    "reason": "Weak signal - CPI trending down but uncertain"
+  },
+  {
+    "market_slug": "nvidia-earnings-beat-q1-2025",
+    "side": "YES",
+    "confidence": 0.90,
+    "size_bucket": "large",
+    "reason": "Analyst consensus + insider signals"
+  }
+]

@@ -1,0 +1,28 @@
+# Multi-Wallet Fleet Configuration
+# 
+# Define multiple bot instances with different configurations.
+# Each wallet can have its own .env file with different:
+# - API keys and wallet addresses
+# - Risk parameters (stake sizes, TP/SL)
+# - Strategy settings
+#
+# Usage: python run_fleet.py
+
+wallets:
+  # Conservative bot - low risk, small stakes
+  - name: "Conservative_1"
+    env_file: ".env.conservative1"
+    description: "Low risk, small positions, tight TP/SL"
+    enabled: true
+
+  # Aggressive bot - higher risk, larger stakes
+  - name: "Aggro_1"
+    env_file: ".env.aggro1"
+    description: "Higher risk, larger positions, wider TP/SL"
+    enabled: false  # Disabled by default
+
+  # Example additional wallets (copy and modify)
+  # - name: "Scalper_1"
+  #   env_file: ".env.scalper1"
+  #   description: "Fast trades, minimal hold time"
+  #   enabled: false

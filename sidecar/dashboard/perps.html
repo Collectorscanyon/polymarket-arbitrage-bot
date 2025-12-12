@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Perps Trading Desk - Bankr Brain + Hands</title>
+  <style>
+    :root { --bg: #0a0e14; --card-bg: #12171f; --accent: #1a2332; --border: #2d3748; --text: #e2e8f0; --text-muted: #718096; --success: #48bb78; --danger: #fc8181; --warning: #ecc94b; --info: #63b3ed; --purple: #b794f4; --long: #48bb78; --short: #fc8181; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 16px; }
+    .dashboard { display: grid; grid-template-columns: 280px 1fr 320px; gap: 16px; max-width: 1600px; margin: 0 auto; }
+    .header { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+    .header h1 { font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 8px; } .header .mode-badge { background: var(--purple); color: #000; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; } .header .nav-links { display: flex; gap: 16px; } .header .nav-link { color: var(--text-muted); text-decoration: none; font-size: 13px; } .header .nav-link:hover { color: var(--text); } .header .clock { color: var(--text-muted); font-size: 13px; }
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+    .card h2 { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .card h2 .enabled { color: var(--success); font-size: 11px; } .card h2 .disabled { color: var(--danger); font-size: 11px; }
+    .left-column, .middle-column, .right-column { display: flex; flex-direction: column; gap: 16px; }
+    .status-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--danger); }
+    .status-dot.enabled { background: var(--success); box-shadow: 0 0 8px var(--success); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+    .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.15s; }
+    .btn:hover { filter: brightness(1.1); } .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-success { background: var(--success); color: #000; } .btn-danger { background: var(--danger); color: #000; } .btn-secondary { background: var(--accent); color: var(--text); border: 1px solid var(--border); } .btn-long { background: var(--long); color: #000; } .btn-short { background: var(--short); color: #000; }
+    .settings-table { width: 100%; font-size: 12px; } .settings-table tr { border-bottom: 1px solid var(--border); } .settings-table td { padding: 8px 0; } .settings-table td:first-child { color: var(--text-muted); } .settings-table td:last-child { text-align: right; font-family: monospace; font-weight: 600; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 700; text-transform: uppercase; } .badge-success { background: rgba(72, 187, 120, 0.2); color: var(--success); } .badge-danger { background: rgba(252, 129, 129, 0.2); color: var(--danger); } .badge-purple { background: rgba(183, 148, 244, 0.2); color: var(--purple); }
+    .pnl-hero { text-align: center; padding: 24px; background: linear-gradient(135deg, var(--card-bg) 0%, var(--accent) 100%); } .pnl-hero .label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; letter-spacing: 1px; } .pnl-hero .value { font-size: 48px; font-weight: 700; font-family: 'SF Mono', Monaco, monospace; } .pnl-hero .value.positive { color: var(--success); } .pnl-hero .value.negative { color: var(--danger); } .pnl-hero .value.neutral { color: var(--text-muted); }
+    .pnl-breakdown { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; } .pnl-stat { text-align: center; padding: 12px; background: var(--bg); border-radius: 6px; } .pnl-stat .label { font-size: 10px; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; } .pnl-stat .value { font-size: 18px; font-weight: 600; font-family: monospace; }
+    .signal-card { background: var(--accent); border-radius: 6px; padding: 12px; margin-bottom: 10px; border-left: 3px solid var(--border); }
+    .signal-card.LONG { border-color: var(--long); } .signal-card.SHORT { border-color: var(--short); } .signal-card.NO_TRADE { border-color: var(--text-muted); }
+    .signal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .signal-asset { font-weight: 700; font-size: 16px; } .signal-side { font-weight: 700; font-size: 12px; } .signal-side.LONG { color: var(--long); } .signal-side.SHORT { color: var(--short); } .signal-side.NO_TRADE { color: var(--text-muted); }
+    .signal-confidence { width: 100%; height: 4px; background: var(--bg); border-radius: 2px; margin: 8px 0; } .signal-confidence-bar { height: 100%; border-radius: 2px; background: var(--info); transition: width 0.3s; }
+    .signal-stats { display: flex; gap: 16px; font-size: 11px; color: var(--text-muted); }
+    .signal-reason { font-size: 11px; color: var(--text-muted); margin-top: 8px; font-style: italic; }
+    .positions-section { grid-column: 1 / -1; } 
+    .positions-table { width: 100%; border-collapse: collapse; font-size: 12px; } 
+    .positions-table th { text-align: left; padding: 10px 12px; background: var(--accent); font-size: 10px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; } 
+    .positions-table td { padding: 12px; border-bottom: 1px solid var(--border); } 
+    .positions-table tr:hover { background: rgba(255,255,255,0.02); }
+    .side-long { color: var(--long); font-weight: 700; } .side-short { color: var(--short); font-weight: 700; }
+    .leverage { background: var(--accent); padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+    .pnl-positive { color: var(--success); } .pnl-negative { color: var(--danger); } .mono { font-family: 'SF Mono', Monaco, monospace; }
+    .activity-feed { max-height: 400px; overflow-y: auto; }
+    .activity-item { padding: 10px; border-left: 3px solid var(--border); margin-bottom: 6px; background: var(--accent); border-radius: 0 6px 6px 0; font-size: 11px; }
+    .activity-item.perp_trade_executed { border-color: var(--purple); } .activity-item.perp_signal { border-color: var(--info); }
+    .activity-header { display: flex; justify-content: space-between; margin-bottom: 4px; } .activity-type { font-weight: 600; text-transform: uppercase; font-size: 9px; color: var(--text-muted); } .activity-time { font-size: 9px; color: var(--text-muted); } .activity-body { color: var(--text); }
+    .asset-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; } .asset-chip { background: var(--accent); padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+    @media (max-width: 1200px) { .dashboard { grid-template-columns: 1fr; } .header, .positions-section { grid-column: 1; } }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <header class="header">
+      <h1>📊 Perps Trading Desk <span class="mode-badge">BANKR EXECUTOR</span></h1>
+      <div class="nav-links">
+        <a href="/dashboard/" class="nav-link">← Polymarket</a>
+        <a href="/dashboard/perps.html" class="nav-link" style="color:var(--purple)">Perps</a>
+      </div>
+      <span class="clock" id="clock"></span>
+    </header>
+
+    <div class="left-column">
+      <div class="card">
+        <h2>🎯 Price Sentinel <span class="badge badge-purple">SCOUT</span></h2>
+        <div class="status-row">
+          <div id="sentinelDot" class="status-dot"></div>
+          <span id="sentinelText" style="font-size:12px;color:var(--text-muted)">Stopped</span>
+          <span id="sentinelUptime" style="margin-left:auto;font-size:10px;color:var(--text-muted)"></span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+          <button id="startSentinelBtn" class="btn btn-success" onclick="startSentinel()">▶ Start</button>
+          <button id="stopSentinelBtn" class="btn btn-danger" onclick="stopSentinel()">■ Stop</button>
+        </div>
+        
+        <!-- Live Price Monitor -->
+        <div style="margin: 12px 0; padding: 10px; background: var(--bg); border-radius: 6px;">
+          <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px">Live Prices (pos in range)</div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+            <span>BTC</span>
+            <span id="btcPrice" class="mono">-</span>
+            <span id="btcPos" class="mono" style="width:50px;text-align:right">-</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px">
+            <span>ETH</span>
+            <span id="ethPrice" class="mono">-</span>
+            <span id="ethPos" class="mono" style="width:50px;text-align:right">-</span>
+          </div>
+          <div style="font-size:9px;color:var(--text-muted);margin-top:6px">Signal fires at pos ≥0.97 or ≤0.03</div>
+        </div>
+        
+        <table class="settings-table" style="font-size:11px">
+          <tr><td>Loop Interval</td><td id="sentinelInterval">15s</td></tr>
+          <tr><td>Dry Run</td><td id="sentinelDryRun"><span class="badge badge-success">ON</span></td></tr>
+          <tr><td>Global Loss Cap</td><td id="sentinelLossCap">$500</td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>⚡ Signal Loop</h2>
+        <div class="status-row">
+          <div id="signalLoopDot" class="status-dot"></div>
+          <span id="signalLoopText" style="font-size:12px;color:var(--text-muted)">Stopped</span>
+          <span id="signalLoopUptime" style="margin-left:auto;font-size:10px;color:var(--text-muted)"></span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+          <button id="startSignalBtn" class="btn btn-success" onclick="startSignalLoop()">▶ Start</button>
+          <button id="stopSignalBtn" class="btn btn-danger" onclick="stopSignalLoop()">■ Stop</button>
+        </div>
+        <div class="status-row" style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
+          <h2 style="margin:0">🎯 Exit Manager</h2>
+        </div>
+        <div class="status-row">
+          <div id="exitMgrDot" class="status-dot"></div>
+          <span id="exitMgrText" style="font-size:12px;color:var(--text-muted)">Stopped</span>
+          <span id="exitMgrUptime" style="margin-left:auto;font-size:10px;color:var(--text-muted)"></span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button id="startExitBtn" class="btn btn-success" onclick="startExitManager()">▶ Start</button>
+          <button id="stopExitBtn" class="btn btn-danger" onclick="stopExitManager()">■ Stop</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>🛡️ Risk Settings</h2>
+        <table class="settings-table">
+          <tr><td>Perps Enabled</td><td id="perpsEnabled"><span class="badge badge-danger">OFF</span></td></tr>
+          <tr><td>Max Leverage</td><td id="maxLeverage">3x</td></tr>
+          <tr><td>Max Risk/Trade</td><td id="maxRiskPct">1.0%</td></tr>
+          <tr><td>Min Confidence</td><td id="minConfidence">60%</td></tr>
+          <tr><td>Dry Run</td><td id="perpsDryRun"><span class="badge badge-success">ON</span></td></tr>
+        </table>
+        <div class="asset-list" id="trackedAssets"></div>
+      </div>
+
+      <div class="card">
+        <h2>📡 Latest Signals</h2>
+        <div id="signalsFeed">
+          <p style="color:var(--text-muted);text-align:center;font-size:12px">No signals yet</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>🚀 Quick Trade <span class="badge badge-purple">BANKR</span></h2>
+        <div style="margin-bottom:12px">
+          <label style="font-size:11px;color:var(--text-muted)">Symbol</label>
+          <select id="tradeSymbol" style="width:100%;padding:8px;background:var(--accent);border:1px solid var(--border);border-radius:6px;color:var(--text);margin-top:4px">
+            <option value="ETH-PERP">ETH-PERP</option>
+            <option value="DEGEN-PERP">DEGEN-PERP</option>
+            <option value="BNKR-PERP">BNKR-PERP</option>
+          </select>
+        </div>
+        <div style="margin-bottom:12px">
+          <label style="font-size:11px;color:var(--text-muted)">Size (USDC)</label>
+          <input type="number" id="tradeSize" value="50" min="1" max="350" style="width:100%;padding:8px;background:var(--accent);border:1px solid var(--border);border-radius:6px;color:var(--text);margin-top:4px" />
+        </div>
+        <div style="margin-bottom:12px">
+          <label style="font-size:11px;color:var(--text-muted)">Reason</label>
+          <input type="text" id="tradeReason" placeholder="Dashboard quick trade" style="width:100%;padding:8px;background:var(--accent);border:1px solid var(--border);border-radius:6px;color:var(--text);margin-top:4px" />
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <button class="btn btn-long" style="flex:1" onclick="executeTrade('LONG')">🟢 LONG</button>
+          <button class="btn btn-short" style="flex:1" onclick="executeTrade('SHORT')">🔴 SHORT</button>
+        </div>
+        <div id="tradeResult" style="font-size:11px;color:var(--text-muted);text-align:center;min-height:24px"></div>
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+          <label style="display:flex;align-items:center;gap:8px;font-size:11px;cursor:pointer">
+            <input type="checkbox" id="dryRunToggle" checked /> Dry Run (no real trades)
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="middle-column">
+      <div class="card pnl-hero">
+        <div class="label">Perps P&L</div>
+        <div id="totalPnl" class="value neutral">$0.00</div>
+        <div class="pnl-breakdown">
+          <div class="pnl-stat">
+            <div class="label">Realized</div>
+            <div id="realizedPnl" class="value">$0.00</div>
+          </div>
+          <div class="pnl-stat">
+            <div class="label">Unrealized</div>
+            <div id="unrealizedPnl" class="value">$0.00</div>
+          </div>
+          <div class="pnl-stat">
+            <div class="label">Open Positions</div>
+            <div id="openCount" class="value">0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📈 Exposure Breakdown</h2>
+        <table class="settings-table">
+          <tr><td>Long Exposure</td><td id="longExposure" class="pnl-positive">$0.00</td></tr>
+          <tr><td>Short Exposure</td><td id="shortExposure" class="pnl-negative">$0.00</td></tr>
+          <tr><td>Net Exposure</td><td id="netExposure">$0.00</td></tr>
+          <tr><td>Avg Leverage</td><td id="avgLeverage">0.0x</td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>🏦 Account</h2>
+        <table class="settings-table">
+          <tr><td>Account Equity</td><td id="accountEquity">$10,000</td></tr>
+          <tr><td>Available Margin</td><td id="availableMargin">$10,000</td></tr>
+          <tr><td>Margin Used</td><td id="marginUsed">$0</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="right-column">
+      <div class="card" style="flex:1">
+        <h2>📝 Perps Activity</h2>
+        <div id="activityFeed" class="activity-feed">
+          <p style="color:var(--text-muted);text-align:center;font-size:12px">Loading...</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="positions-section card">
+      <h2>💼 Open Perp Positions</h2>
+      <table class="positions-table">
+        <thead>
+          <tr>
+            <th>Opened</th>
+            <th>Asset</th>
+            <th>Side</th>
+            <th>Size</th>
+            <th>Leverage</th>
+            <th>Entry</th>
+            <th>Current</th>
+            <th>TP / SL</th>
+            <th>Unrealized</th>
+            <th>Confidence</th>
+          </tr>
+        </thead>
+        <tbody id="positionsBody">
+          <tr><td colspan="10" style="text-align:center;color:var(--text-muted)">No open perp positions</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Sentinel Signals Log -->
+    <div class="positions-section card">
+      <h2>🎯 Sentinel Signals <span id="signalsStats" style="font-size:11px;color:var(--text-muted);margin-left:12px"></span></h2>
+      <table class="positions-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Symbol</th>
+            <th>Direction</th>
+            <th>Pos in Range</th>
+            <th>Price</th>
+            <th>Range %</th>
+            <th>Bankr Action</th>
+            <th>Reason</th>
+            <th>Size</th>
+            <th>Mode</th>
+          </tr>
+        </thead>
+        <tbody id="signalsBody">
+          <tr><td colspan="10" style="text-align:center;color:var(--text-muted)">No sentinel signals yet</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('clock').textContent = now.toLocaleString() + ' / ' + now.toISOString().slice(11,19) + ' UTC';
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    async function fetchJson(url) {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(res.status);
+      return res.json();
+    }
+
+    async function fetchPerpsStatus() {
+      try {
+        const data = await fetchJson(API_BASE + '/perps/status');
+        const dot = document.getElementById('perpsStatusDot');
+        const text = document.getElementById('perpsStatusText');
+        const badge = document.getElementById('perpsEnabledBadge');
+
+        if (data.enabled) {
+          dot.classList.add('enabled');
+          text.textContent = 'Perps Enabled';
+          badge.textContent = 'ENABLED';
+          badge.className = 'enabled';
+        } else {
+          dot.classList.remove('enabled');
+          text.textContent = 'Perps Disabled';
+          badge.textContent = 'DISABLED';
+          badge.className = 'disabled';
+        }
+
+        const s = data.settings || {};
+        document.getElementById('maxLeverage').textContent = (s.maxLeverage || 3) + 'x';
+        document.getElementById('maxRiskPct').textContent = (s.maxRiskPct || 1) + '%';
+
+        // Tracked assets
+        const assets = s.trackedAssets || ['DEGEN', 'BNKR', 'ETH'];
+        document.getElementById('trackedAssets').innerHTML = assets.map(a => 
+          '<span class="asset-chip">' + a + '</span>'
+        ).join('');
+
+        // PnL summary
+        const pnl = data.pnl || {};
+        const realized = pnl.realized_pnl || 0;
+        const unrealized = pnl.unrealized_pnl || 0;
+        const total = realized + unrealized;
+
+        document.getElementById('realizedPnl').textContent = '$' + realized.toFixed(2);
+        document.getElementById('realizedPnl').className = 'value ' + (realized >= 0 ? 'pnl-positive' : 'pnl-negative');
+
+        document.getElementById('unrealizedPnl').textContent = '$' + unrealized.toFixed(2);
+        document.getElementById('unrealizedPnl').className = 'value ' + (unrealized >= 0 ? 'pnl-positive' : 'pnl-negative');
+
+        document.getElementById('totalPnl').textContent = '$' + total.toFixed(2);
+        document.getElementById('totalPnl').className = 'value ' + (total > 0 ? 'positive' : total < 0 ? 'negative' : 'neutral');
+
+        document.getElementById('openCount').textContent = pnl.open_positions || 0;
+
+      } catch (e) {
+        console.error('Perps status error:', e);
+      }
+    }
+
+    async function fetchPerpsPositions() {
+      try {
+        const data = await fetchJson(API_BASE + '/perps/positions');
+        const positions = data.positions || [];
+        const tbody = document.getElementById('positionsBody');
+
+        if (positions.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text-muted)">No open perp positions</td></tr>';
+          return;
+        }
+
+        let totalLong = 0, totalShort = 0, totalLeverage = 0;
+
+        tbody.innerHTML = positions.map(p => {
+          const pnlCls = (p.unrealized_pnl || 0) >= 0 ? 'pnl-positive' : 'pnl-negative';
+          const sideCls = p.side === 'LONG' ? 'side-long' : 'side-short';
+          const time = p.opened_at ? new Date(p.opened_at).toLocaleString() : '-';
+          const conf = p.bankr_confidence ? (p.bankr_confidence * 100).toFixed(0) + '%' : '-';
+
+          if (p.side === 'LONG') totalLong += (p.size_usd || 0);
+          else totalShort += (p.size_usd || 0);
+          totalLeverage += (p.leverage || 1);
+
+          return `<tr>
+            <td>${time}</td>
+            <td><strong>${p.asset}</strong></td>
+            <td class="${sideCls}">${p.side}</td>
+            <td class="mono">$${(p.size_usd || 0).toFixed(2)}</td>
+            <td><span class="leverage">${p.leverage || 1}x</span></td>
+            <td class="mono">${(p.entry_price || 0).toFixed(6)}</td>
+            <td class="mono">${(p.current_price || 0).toFixed(6)}</td>
+            <td class="mono" style="font-size:10px">
+              <span class="pnl-positive">${p.tp_price || '-'}</span> / 
+              <span class="pnl-negative">${p.sl_price || '-'}</span>
+            </td>
+            <td class="mono ${pnlCls}">$${(p.unrealized_pnl || 0).toFixed(2)}</td>
+            <td><span class="badge badge-purple">${conf}</span></td>
+          </tr>`;
+        }).join('');
+
+        document.getElementById('longExposure').textContent = '$' + totalLong.toFixed(2);
+        document.getElementById('shortExposure').textContent = '$' + totalShort.toFixed(2);
+        document.getElementById('netExposure').textContent = '$' + (totalLong - totalShort).toFixed(2);
+        document.getElementById('avgLeverage').textContent = positions.length > 0 
+          ? (totalLeverage / positions.length).toFixed(1) + 'x' 
+          : '0.0x';
+
+      } catch (e) {
+        console.error('Perps positions error:', e);
+      }
+    }
+
+    async function fetchActivity() {
+      try {
+        const data = await fetchJson(API_BASE + '/activity');
+        const feed = document.getElementById('activityFeed');
+
+        // Filter for perp-related activity
+        const perpActivity = (data.activity || []).filter(item => 
+          item.type && item.type.includes('perp')
+        );
+
+        if (perpActivity.length === 0) {
+          feed.innerHTML = '<p style="color:var(--text-muted);text-align:center;font-size:12px">No perps activity yet</p>';
+          return;
+        }
+
+        feed.innerHTML = perpActivity.slice(0, 30).map(item => {
+          const time = new Date(item.ts).toLocaleTimeString();
+          let icon = '📊';
+          if (item.type.includes('trade')) icon = '💹';
+          if (item.type.includes('signal')) icon = '📡';
+
+          let det = '';
+          if (item.asset) det = `${item.asset} ${item.side || ''} ${item.size_usd ? '$' + item.size_usd : ''}`;
+          if (item.confidence) det += ` (${(item.confidence * 100).toFixed(0)}%)`;
+
+          return `<div class="activity-item ${item.type}">
+            <div class="activity-header">
+              <span class="activity-type">${icon} ${item.type.replace(/_/g, ' ')}</span>
+              <span class="activity-time">${time}</span>
+            </div>
+            <div class="activity-body">${det || item.reason || ''}</div>
+          </div>`;
+        }).join('');
+
+        // Also populate signals feed from activity
+        const signals = perpActivity.filter(a => a.type === 'perp_signal').slice(0, 5);
+        const signalsFeed = document.getElementById('signalsFeed');
+
+        if (signals.length === 0) {
+          signalsFeed.innerHTML = '<p style="color:var(--text-muted);text-align:center;font-size:12px">No signals yet</p>';
+        } else {
+          signalsFeed.innerHTML = signals.map(s => {
+            const conf = s.confidence ? (s.confidence * 100).toFixed(0) : 0;
+            return `<div class="signal-card ${s.decision || s.side}">
+              <div class="signal-header">
+                <span class="signal-asset">${s.asset}</span>
+                <span class="signal-side ${s.decision || s.side}">${s.decision || s.side}</span>
+              </div>
+              <div class="signal-confidence">
+                <div class="signal-confidence-bar" style="width:${conf}%"></div>
+              </div>
+              <div class="signal-stats">
+                <span>Confidence: ${conf}%</span>
+                ${s.size_usd ? `<span>Size: $${s.size_usd}</span>` : ''}
+                ${s.leverage ? `<span>Lev: ${s.leverage}x</span>` : ''}
+              </div>
+              ${s.reason ? `<div class="signal-reason">${s.reason.slice(0, 80)}...</div>` : ''}
+            </div>`;
+          }).join('');
+        }
+
+      } catch (e) {
+        console.error('Activity error:', e);
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // Signal Loop & Exit Manager Controls
+    // ─────────────────────────────────────────────────────────────────
+    
+    async function fetchSignalLoopStatus() {
+      try {
+        const data = await fetchJson(API_BASE + '/perps/signal-loop/status');
+        const dot = document.getElementById('signalLoopDot');
+        const text = document.getElementById('signalLoopText');
+        const up = document.getElementById('signalLoopUptime');
+        
+        if (data.running) {
+          dot.classList.add('enabled');
+          text.textContent = 'Running';
+          text.style.color = 'var(--success)';
+          if (data.startTime) {
+            const e = Math.floor((Date.now() - new Date(data.startTime).getTime()) / 1000);
+            up.textContent = Math.floor(e/60) + 'm ' + (e%60) + 's';
+          }
+          document.getElementById('startSignalBtn').disabled = true;
+          document.getElementById('stopSignalBtn').disabled = false;
+        } else {
+          dot.classList.remove('enabled');
+          text.textContent = 'Stopped';
+          text.style.color = 'var(--text-muted)';
+          up.textContent = '';
+          document.getElementById('startSignalBtn').disabled = false;
+          document.getElementById('stopSignalBtn').disabled = true;
+        }
+      } catch (e) {}
+    }
+    
+    async function fetchExitMgrStatus() {
+      try {
+        const data = await fetchJson(API_BASE + '/perps/exit-manager/status');
+        const dot = document.getElementById('exitMgrDot');
+        const text = document.getElementById('exitMgrText');
+        const up = document.getElementById('exitMgrUptime');
+        
+        if (data.running) {
+          dot.classList.add('enabled');
+          text.textContent = 'Running';
+          text.style.color = 'var(--success)';
+          if (data.startTime) {
+            const e = Math.floor((Date.now() - new Date(data.startTime).getTime()) / 1000);
+            up.textContent = Math.floor(e/60) + 'm ' + (e%60) + 's';
+          }
+          document.getElementById('startExitBtn').disabled = true;
+          document.getElementById('stopExitBtn').disabled = false;
+        } else {
+          dot.classList.remove('enabled');
+          text.textContent = 'Stopped';
+          text.style.color = 'var(--text-muted)';
+          up.textContent = '';
+          document.getElementById('startExitBtn').disabled = false;
+          document.getElementById('stopExitBtn').disabled = true;
+        }
+      } catch (e) {}
+    }
+    
+    async function startSignalLoop() {
+      document.getElementById('startSignalBtn').disabled = true;
+      await fetch(API_BASE + '/perps/signal-loop/start', { method: 'POST' });
+      setTimeout(fetchSignalLoopStatus, 500);
+    }
+    
+    async function stopSignalLoop() {
+      document.getElementById('stopSignalBtn').disabled = true;
+      await fetch(API_BASE + '/perps/signal-loop/stop', { method: 'POST' });
+      setTimeout(fetchSignalLoopStatus, 500);
+    }
+    
+    async function startExitManager() {
+      document.getElementById('startExitBtn').disabled = true;
+      await fetch(API_BASE + '/perps/exit-manager/start', { method: 'POST' });
+      setTimeout(fetchExitMgrStatus, 500);
+    }
+    
+    async function stopExitManager() {
+      document.getElementById('stopExitBtn').disabled = true;
+      await fetch(API_BASE + '/perps/exit-manager/stop', { method: 'POST' });
+      setTimeout(fetchExitMgrStatus, 500);
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // Sentinel Controls (Local Scout → Bankr Sniper)
+    // ─────────────────────────────────────────────────────────────────
+    
+    async function fetchSentinelStatus() {
+      try {
+        const data = await fetchJson(API_BASE + '/sentinel/status');
+        const dot = document.getElementById('sentinelDot');
+        const text = document.getElementById('sentinelText');
+        const up = document.getElementById('sentinelUptime');
+        
+        if (data.running) {
+          dot.classList.add('enabled');
+          text.textContent = 'Watching';
+          text.style.color = 'var(--success)';
+          if (data.startTime) {
+            const e = Math.floor((Date.now() - new Date(data.startTime).getTime()) / 1000);
+            up.textContent = Math.floor(e/60) + 'm ' + (e%60) + 's';
+          }
+          document.getElementById('startSentinelBtn').disabled = true;
+          document.getElementById('stopSentinelBtn').disabled = false;
+        } else {
+          dot.classList.remove('enabled');
+          text.textContent = 'Stopped';
+          text.style.color = 'var(--text-muted)';
+          up.textContent = '';
+          document.getElementById('startSentinelBtn').disabled = false;
+          document.getElementById('stopSentinelBtn').disabled = true;
+        }
+        
+        // Update settings display
+        if (data.settings) {
+          document.getElementById('sentinelInterval').textContent = data.settings.loopInterval + 's';
+          document.getElementById('sentinelDryRun').innerHTML = data.settings.dryRun 
+            ? '<span class="badge badge-success">ON</span>' 
+            : '<span class="badge badge-danger">OFF</span>';
+          document.getElementById('sentinelLossCap').textContent = '$' + data.settings.globalDailyLossCap;
+        }
+      } catch (e) {}
+    }
+    
+    async function startSentinel() {
+      document.getElementById('startSentinelBtn').disabled = true;
+      await fetch(API_BASE + '/sentinel/start', { method: 'POST' });
+      setTimeout(fetchSentinelStatus, 500);
+    }
+    
+    async function stopSentinel() {
+      document.getElementById('stopSentinelBtn').disabled = true;
+      await fetch(API_BASE + '/sentinel/stop', { method: 'POST' });
+      setTimeout(fetchSentinelStatus, 500);
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // Quick Trade Execution (Bankr = brain + hands)
+    // ─────────────────────────────────────────────────────────────────
+    
+    async function executeTrade(direction) {
+      const symbol = document.getElementById('tradeSymbol').value;
+      const size = parseFloat(document.getElementById('tradeSize').value);
+      const reason = document.getElementById('tradeReason').value || 'Dashboard quick trade';
+      const dryRun = document.getElementById('dryRunToggle').checked;
+      const resultEl = document.getElementById('tradeResult');
+      
+      if (isNaN(size) || size <= 0) {
+        resultEl.innerHTML = '<span style="color:var(--danger)">⚠️ Invalid size</span>';
+        return;
+      }
+      
+      resultEl.innerHTML = `<span style="color:var(--info)">⏳ Sending ${dryRun ? 'DRY RUN' : 'LIVE'} trade to Bankr...</span>`;
+      
+      try {
+        const res = await fetch(API_BASE + '/perps/execute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            symbol,
+            direction,
+            size_usdc: size,
+            reason,
+            dry_run: dryRun
+          })
+        });
+        
+        const data = await res.json();
+        
+        if (data.ok) {
+          const modeLabel = dryRun ? '(DRY RUN)' : '';
+          resultEl.innerHTML = `<span style="color:var(--success)">✓ ${direction} ${symbol} ${modeLabel}</span>`;
+          if (data.summary) {
+            resultEl.innerHTML += `<br><span style="font-size:10px">${data.summary.slice(0, 100)}...</span>`;
+          }
+          // Refresh data
+          setTimeout(refreshAll, 1000);
+        } else {
+          resultEl.innerHTML = `<span style="color:var(--danger)">✗ ${data.error || 'Unknown error'}</span>`;
+        }
+      } catch (e) {
+        resultEl.innerHTML = `<span style="color:var(--danger)">✗ Network error</span>`;
+        console.error('Trade error:', e);
+      }
+    }
+
+    function refreshAll() {
+      fetchPerpsStatus();
+      fetchPerpsPositions();
+      fetchActivity();
+      fetchSignalLoopStatus();
+      fetchExitMgrStatus();
+      fetchSentinelStatus();
+      fetchSentinelSignals();
+    }
+
+    async function fetchSentinelSignals() {
+      try {
+        const data = await fetchJson(API_BASE + '/sentinel/signals?limit=30');
+        const tbody = document.getElementById('signalsBody');
+        const statsEl = document.getElementById('signalsStats');
+        
+        // Update stats
+        if (data.stats?.today) {
+          statsEl.textContent = `Today: ${data.stats.today.total} signals (${data.stats.today.executed} executed, ${data.stats.today.skipped} skipped)`;
+        }
+        
+        if (!data.signals || data.signals.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text-muted)">No sentinel signals yet</td></tr>';
+          return;
+        }
+        
+        tbody.innerHTML = data.signals.map(s => {
+          const time = new Date(s.timestamp).toLocaleTimeString();
+          const actionClass = s.bankr_action === 'EXECUTE' ? 'pnl-positive' : s.bankr_action === 'SKIP' ? 'pnl-negative' : '';
+          const dirClass = s.direction === 'LONG' ? 'side-long' : 'side-short';
+          const modeText = s.dry_run ? '<span class="badge badge-success">DRY</span>' : '<span class="badge badge-purple">LIVE</span>';
+          const reasonShort = s.bankr_reason?.slice(0, 40) || '-';
+          
+          return `<tr>
+            <td>${time}</td>
+            <td><strong>${s.symbol}</strong></td>
+            <td class="${dirClass}">${s.direction}</td>
+            <td class="mono">${(s.pos_in_range || 0).toFixed(3)}</td>
+            <td class="mono">$${(s.price || 0).toLocaleString()}</td>
+            <td class="mono">${(s.range_pct || 0).toFixed(2)}%</td>
+            <td class="${actionClass}"><strong>${s.bankr_action}</strong></td>
+            <td title="${s.bankr_reason || ''}" style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${reasonShort}</td>
+            <td class="mono">${s.size_usdc ? '$' + s.size_usdc : '-'}</td>
+            <td>${modeText}</td>
+          </tr>`;
+        }).join('');
+      } catch (e) {
+        console.error('Error fetching signals:', e);
+      }
+    }
+
+    // Fetch live prices for price panel
+    async function fetchLivePrices() {
+      try {
+        const res = await fetch('/sentinel/prices');
+        const data = await res.json();
+        
+        if (data.prices) {
+          // BTC
+          if (data.prices.BTC) {
+            const btc = data.prices.BTC;
+            document.getElementById('btc-price').textContent = '$' + btc.price.toLocaleString(undefined, {maximumFractionDigits: 0});
+            document.getElementById('btc-range').textContent = `$${btc.low_24h.toLocaleString(undefined, {maximumFractionDigits: 0})} - $${btc.high_24h.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+            document.getElementById('btc-pos-bar').style.width = (btc.pos_in_range * 100) + '%';
+            document.getElementById('btc-pos-val').textContent = (btc.pos_in_range * 100).toFixed(1) + '%';
+            
+            // Zone coloring
+            const btcBar = document.getElementById('btc-pos-bar');
+            if (btc.pos_in_range >= btc.zones.top) {
+              btcBar.style.background = 'var(--danger)';
+              document.getElementById('btc-zone').textContent = '🔴 TOP ZONE (SHORT ready)';
+              document.getElementById('btc-zone').style.color = 'var(--danger)';
+            } else if (btc.pos_in_range <= btc.zones.bottom) {
+              btcBar.style.background = 'var(--success)';
+              document.getElementById('btc-zone').textContent = '🟢 BOTTOM ZONE (LONG ready)';
+              document.getElementById('btc-zone').style.color = 'var(--success)';
+            } else {
+              btcBar.style.background = 'var(--primary)';
+              document.getElementById('btc-zone').textContent = '⚪ Middle - no signal';
+              document.getElementById('btc-zone').style.color = 'var(--text-muted)';
+            }
+          }
+          
+          // ETH
+          if (data.prices.ETH) {
+            const eth = data.prices.ETH;
+            document.getElementById('eth-price').textContent = '$' + eth.price.toLocaleString(undefined, {maximumFractionDigits: 0});
+            document.getElementById('eth-range').textContent = `$${eth.low_24h.toLocaleString(undefined, {maximumFractionDigits: 0})} - $${eth.high_24h.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+            document.getElementById('eth-pos-bar').style.width = (eth.pos_in_range * 100) + '%';
+            document.getElementById('eth-pos-val').textContent = (eth.pos_in_range * 100).toFixed(1) + '%';
+            
+            // Zone coloring
+            const ethBar = document.getElementById('eth-pos-bar');
+            if (eth.pos_in_range >= eth.zones.top) {
+              ethBar.style.background = 'var(--danger)';
+              document.getElementById('eth-zone').textContent = '🔴 TOP ZONE (SHORT ready)';
+              document.getElementById('eth-zone').style.color = 'var(--danger)';
+            } else if (eth.pos_in_range <= eth.zones.bottom) {
+              ethBar.style.background = 'var(--success)';
+              document.getElementById('eth-zone').textContent = '🟢 BOTTOM ZONE (LONG ready)';
+              document.getElementById('eth-zone').style.color = 'var(--success)';
+            } else {
+              ethBar.style.background = 'var(--primary)';
+              document.getElementById('eth-zone').textContent = '⚪ Middle - no signal';
+              document.getElementById('eth-zone').style.color = 'var(--text-muted)';
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Error fetching live prices:', e);
+      }
+    }
+
+    // Initial fetch
+    fetchPerpsStatus();
+    fetchPerpsPositions();
+    fetchActivity();
+    fetchSignalLoopStatus();
+    fetchExitMgrStatus();
+    fetchSentinelStatus();
+    fetchSentinelSignals();
+    fetchLivePrices();
+
+    // Polling
+    setInterval(fetchPerpsStatus, 5000);
+    setInterval(fetchPerpsPositions, 10000);
+    setInterval(fetchActivity, 5000);
+    setInterval(fetchSignalLoopStatus, 3000);
+    setInterval(fetchExitMgrStatus, 3000);
+    setInterval(fetchSentinelStatus, 3000);
+    setInterval(fetchSentinelSignals, 10000);
+    setInterval(fetchLivePrices, 5000); // Update prices every 5s
+  </script>
+</body>
+</html>

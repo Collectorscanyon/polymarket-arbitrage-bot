@@ -54,3 +54,74 @@ In the future, we aim to expand its functionality to include working with cross-
 Need help, have questions, or want to collaborate? Reach out!  
 
 - **Telegram**: [@soladity](https://t.me/soladity)  
+
+---
+
+## Bankr Bot Integration
+
+This project includes integration with [Bankr](https://bankr.bot) for automated trading execution.
+
+### Trading Modes
+
+**1. Polymarket Mode (default)**
+- Bankr executes trades on Polymarket prediction markets
+- Configured via `BANKR_*` environment variables
+- Guardrails: `MAX_USDC_PER_PROMPT`, `DAILY_SPEND_CAP`
+
+**2. Perps Mode - "Bankr = Brain + Hands"**
+- Bankr directly executes leveraged perp trades on **Avantis** (Base chain)
+- You don't maintain any Avantis integration code - Bankr handles everything
+- Send intent + constraints, Bankr executes
+
+### Perps Quick Start
+
+```bash
+# 1. Configure environment
+PERPS_ENABLED=true
+PERPS_MAX_LEVERAGE=5
+PERPS_MAX_USDC_PER_TRADE=350
+PERPS_DAILY_LOSS_CAP=200
+PERPS_DRY_RUN=true
+
+# 2. Start sidecar
+cd sidecar && npm start
+
+# 3. Execute a trade via Python
+python -m perps.perps_execution long --symbol ETH-PERP --size 100 --reason "Bullish momentum"
+
+# 4. Or use the dashboard
+# Open http://localhost:4000/dashboard/perps.html
+```
+
+### Perps Command Schema
+
+```python
+command = {
+    "mode": "perp_trade",
+    "venue": "avantis",
+    "wallet": "<your-wallet>",
+    "constraints": {
+        "max_leverage": 5,
+        "max_usdc_per_trade": 350,
+        "daily_loss_cap": 200
+    },
+    "intent": {
+        "symbol": "ETH-PERP",
+        "direction": "LONG",
+        "size_usdc": 100,
+        "reason": "Strong upward momentum after consolidation"
+    }
+}
+```
+
+### Dashboard
+
+- **Polymarket Dashboard**: `http://localhost:4000/dashboard/`
+- **Perps Dashboard**: `http://localhost:4000/dashboard/perps.html`
+
+The perps dashboard includes:
+- Quick trade execution (LONG/SHORT buttons)
+- Open positions with live P&L
+- Signal loop and exit manager controls
+- Activity feed with trade history
+  
