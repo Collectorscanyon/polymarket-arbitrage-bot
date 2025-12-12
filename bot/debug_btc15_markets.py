@@ -66,8 +66,8 @@ def fetch_btc_updown_events():
     Specifically fetch btc-updown-15m events which may not appear in standard queries.
     These are short-lived intraday markets.
     """
-    import requests
     from datetime import datetime, timezone, timedelta
+    from utils.http_client import request as http_request
     
     results = []
     
@@ -84,15 +84,20 @@ def fetch_btc_updown_events():
         
         slug = f"btc-updown-15m-{timestamp}"
         try:
-            resp = requests.get(f"https://gamma-api.polymarket.com/events?slug={slug}", timeout=5)
+            resp = http_request(
+                "GET",
+                "https://gamma-api.polymarket.com/events",
+                params={"slug": slug},
+                timeout=5,
+            )
             if resp.ok:
                 data = resp.json()
                 for event in data:
                     for m in event.get("markets", []):
                         m["_source"] = "btc-updown-direct"
                         results.append(m)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[WARN] direct fetch failed for {slug}: {e}")
     
     return results
 
@@ -114,7 +119,7 @@ def main():
     print("[1/3] Fetching from gamma-api.polymarket.com/markets...")
     single_markets_parser = MarketsDataParser("https://gamma-api.polymarket.com/markets")
     single_markets = single_markets_parser.get_markets() or []
-    print(f"       → Got {len(single_markets)} markets")
+    print(f"       -> Got {len(single_markets)} markets")
 
     print("[2/3] Fetching from gamma-api.polymarket.com/events...")
     events_parser = MultiMarketsDataParser("https://gamma-api.polymarket.com/events")
@@ -123,12 +128,12 @@ def main():
     for event in events:
         for m in event.get("markets", []):
             event_markets.append(m)
-    print(f"       → Got {len(event_markets)} markets from events")
+    print(f"       -> Got {len(event_markets)} markets from events")
 
     # Special: Try to fetch btc-updown-15m events directly (they may not appear in standard queries)
     print("[2.5] Fetching btc-updown-15m events directly...")
     btc_updown_markets = fetch_btc_updown_events()
-    print(f"       → Got {len(btc_updown_markets)} btc-updown-15m markets")
+    print(f"       -> Got {len(btc_updown_markets)} btc-updown-15m markets")
 
     # Combine and dedupe by slug
     all_markets = {}
@@ -173,7 +178,7 @@ def main():
             print(f"  endDate: {c['endDate']}")
             print()
     else:
-        print("\n  ❌ No BTC/Bitcoin/Up-or-Down candidates found.\n")
+        print("\n  No BTC/Bitcoin/Up-or-Down candidates found.\n")
 
     # ═══════════════════════════════════════════════════════════════════════════
     # SECTION 2: BTC15 Matching Results
@@ -220,7 +225,7 @@ def main():
     if matching:
         for m in sorted(matching, key=lambda x: x["minutes_to_expiry"]):
             exp_str = f"{m['minutes_to_expiry']:.1f} min" if m['minutes_to_expiry'] < 999 else "N/A"
-            print(f"  ✅ {m['slug']}")
+            print(f"  [MATCH] {m['slug']}")
             print(f"     Q: {m['question']}")
             print(f"     Volume: ${m['volume_usdc']:,.0f} | Expiry: {exp_str}")
             print()
@@ -235,8 +240,8 @@ def main():
     if partial_matches:
         for m in sorted(partial_matches, key=lambda x: -x["volume_usdc"])[:15]:
             exp_str = f"{m['minutes_to_expiry']:.1f} min" if m['minutes_to_expiry'] < 999 else "N/A"
-            vol_ok = "✓" if m['volume_usdc'] >= BTC15_CONFIG.min_volume_usdc else "✗"
-            exp_ok = "✓" if 5 <= m['minutes_to_expiry'] <= 30 else "✗"
+            vol_ok = "OK" if m['volume_usdc'] >= BTC15_CONFIG.min_volume_usdc else "LOW"
+            exp_ok = "OK" if 5 <= m['minutes_to_expiry'] <= 30 else "BAD"
             print(f"  {m['slug']}")
             print(f"     Q: {m['question']}")
             print(f"     Volume: ${m['volume_usdc']:,.0f} {vol_ok} | Expiry: {exp_str} {exp_ok}")

@@ -1,0 +1,5 @@
+requests
+web3
+pyyaml
+py-clob-client>=0.31.0
+websocket-client>=1.7.0

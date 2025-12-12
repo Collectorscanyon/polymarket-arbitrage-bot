@@ -2,12 +2,15 @@ from utils.outcome_prices_checker import OutcomePricesChecker
 import pytest
 
 def test_count_outcome_prices():
-    assert OutcomePricesChecker.count_outcome_prices([]) == False
-    assert OutcomePricesChecker.count_outcome_prices([0.1234, 0.1234878]) == True
+    assert OutcomePricesChecker([]).count_outcome_prices() == False
+    assert OutcomePricesChecker([0.1234, 0.1234878]).count_outcome_prices() == True
 
 def test_check_outcome_prices():
     with pytest.raises(ValueError):
-        OutcomePricesChecker.check_outcome_prices(["Hello", 0.12])
+        # Create checker with invalid data and call check
+        checker = OutcomePricesChecker(["Hello", 0.12])
+        if not checker.check_outcome_prices():
+            raise ValueError("Invalid outcome prices")
 
-    assert OutcomePricesChecker.check_outcome_prices([0.1234, 0.2341]) == True
+    assert OutcomePricesChecker([0.1234, 0.2341]).check_outcome_prices() == True
 

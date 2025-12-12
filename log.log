@@ -1,27 +1,5 @@
-2025-12-10 17:15:00,009 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): gamma-api.polymarket.com:443
-2025-12-10 17:15:00,901 - urllib3.connectionpool - DEBUG - https://gamma-api.polymarket.com:443 "GET /events?order=id&ascending=false&closed=false&limit=50 HTTP/1.1" 200 None
-2025-12-10 17:15:01,176 - root - INFO - [FETCH] events-latest: 50 events \u2192 161 open markets
-2025-12-10 17:15:01,178 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): gamma-api.polymarket.com:443
-2025-12-10 17:15:01,807 - urllib3.connectionpool - DEBUG - https://gamma-api.polymarket.com:443 "GET /events?slug=btc-updown-15m-1765411200 HTTP/1.1" 200 None
-2025-12-10 17:15:01,808 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): gamma-api.polymarket.com:443
-2025-12-10 17:15:02,445 - urllib3.connectionpool - DEBUG - https://gamma-api.polymarket.com:443 "GET /events?slug=btc-updown-15m-1765412100 HTTP/1.1" 200 None
-2025-12-10 17:15:02,448 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): gamma-api.polymarket.com:443
-2025-12-10 17:15:03,049 - urllib3.connectionpool - DEBUG - https://gamma-api.polymarket.com:443 "GET /events?slug=btc-updown-15m-1765413000 HTTP/1.1" 200 None
-2025-12-10 17:15:03,052 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): gamma-api.polymarket.com:443
-2025-12-10 17:15:03,692 - urllib3.connectionpool - DEBUG - https://gamma-api.polymarket.com:443 "GET /events?slug=btc-updown-15m-1765413900 HTTP/1.1" 200 None
-2025-12-10 17:15:03,696 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): gamma-api.polymarket.com:443
-2025-12-10 17:15:04,304 - urllib3.connectionpool - DEBUG - https://gamma-api.polymarket.com:443 "GET /events?slug=btc-updown-15m-1765414800 HTTP/1.1" 200 None
-2025-12-10 17:15:04,307 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): gamma-api.polymarket.com:443
-2025-12-10 17:15:04,905 - urllib3.connectionpool - DEBUG - https://gamma-api.polymarket.com:443 "GET /events?slug=btc-updown-15m-1765415700 HTTP/1.1" 200 None
-2025-12-10 17:15:04,907 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): gamma-api.polymarket.com:443
-2025-12-10 17:15:05,495 - urllib3.connectionpool - DEBUG - https://gamma-api.polymarket.com:443 "GET /events?slug=btc-updown-15m-1765416600 HTTP/1.1" 200 None
-2025-12-10 17:15:05,498 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): gamma-api.polymarket.com:443
-2025-12-10 17:15:06,133 - urllib3.connectionpool - DEBUG - https://gamma-api.polymarket.com:443 "GET /events?slug=btc-updown-15m-1765417500 HTTP/1.1" 200 None
-2025-12-10 17:15:06,136 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): gamma-api.polymarket.com:443
-2025-12-10 17:15:06,737 - urllib3.connectionpool - DEBUG - https://gamma-api.polymarket.com:443 "GET /events?slug=btc-updown-15m-1765418400 HTTP/1.1" 200 None
-2025-12-10 17:15:06,742 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): localhost:4000
-2025-12-10 17:15:11,744 - root - WARNING - [BTC15] Failed to load states from sidecar: HTTPConnectionPool(host='localhost', port=4000): Read timed out. (read timeout=5)
-2025-12-10 17:15:11,744 - root - INFO - [BTC15] \u2705 BTC-UPDOWN-15M matched: btc-updown-15m-1765497600 (vol=$0)
-2025-12-10 17:15:11,744 - root - INFO - [BTC15] \u2705 BTC-UPDOWN-15M matched: btc-updown-15m-1765496700 (vol=$0)
-2025-12-10 17:15:11,744 - root - INFO - [BTC15] \u2705 BTC-UPDOWN-15M matched: btc-updown-15m-1765495800 (vol=$0)
-2025-12-10 17:15:11,744 - root - INFO - [BTC15] \u2705 BTC-UPDOWN-15M matched: btc-updown-15m-1765494900 (vol=$0)
+2025-12-12 15:15:10,724 - utils.set_minimum_price_gap - INFO - Using MINIMUM_PRICE_GAP from environment: 3.0
+2025-12-12 15:15:10,726 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): localhost:4000
+2025-12-12 15:15:14,747 - urllib3.util.retry - DEBUG - Incremented Retry for (url='/btc15/states'): Retry(total=2, connect=2, read=3, redirect=None, status=None)
+2025-12-12 15:15:14,748 - urllib3.connectionpool - WARNING - Retrying (Retry(total=2, connect=2, read=3, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000028A57378C20>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it')': /btc15/states
+2025-12-12 15:15:14,748 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (2): localhost:4000

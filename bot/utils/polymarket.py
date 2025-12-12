@@ -3,11 +3,14 @@
 Polymarket price fetching utilities.
 """
 
-import requests
+import logging
 from typing import Optional
+
+from utils.http_client import request as http_request
 
 
 GAMMA_API_BASE = "https://gamma-api.polymarket.com"
+logger = logging.getLogger(__name__)
 
 
 def get_market_price(market_slug: str, side: str = "YES") -> float:
@@ -26,7 +29,8 @@ def get_market_price(market_slug: str, side: str = "YES") -> float:
     """
     try:
         # Try to get market data from Gamma API
-        resp = requests.get(
+        resp = http_request(
+            "GET",
             f"{GAMMA_API_BASE}/markets",
             params={"slug": market_slug},
             timeout=10,
@@ -36,7 +40,8 @@ def get_market_price(market_slug: str, side: str = "YES") -> float:
         
         if not markets:
             # Try searching by condition_id or question
-            resp = requests.get(
+            resp = http_request(
+                "GET",
                 f"{GAMMA_API_BASE}/markets",
                 params={"_limit": 100, "active": "true"},
                 timeout=10,
@@ -67,7 +72,7 @@ def get_market_price(market_slug: str, side: str = "YES") -> float:
         
         return price
         
-    except requests.RequestException as e:
+    except Exception as e:
         raise ValueError(f"Failed to fetch price for {market_slug}: {e}")
 
 
@@ -79,7 +84,8 @@ def get_market_prices(market_slug: str) -> tuple[float, float]:
         Tuple of (yes_price, no_price)
     """
     try:
-        resp = requests.get(
+        resp = http_request(
+            "GET",
             f"{GAMMA_API_BASE}/markets",
             params={"slug": market_slug},
             timeout=10,
@@ -95,7 +101,8 @@ def get_market_prices(market_slug: str) -> tuple[float, float]:
         
         return (float(prices[0]), float(prices[1]))
         
-    except Exception:
+    except Exception as e:
+        logger.debug("Failed to fetch prices for %s: %s", market_slug, e)
         return (0.5, 0.5)
 
 
@@ -107,7 +114,8 @@ def get_market_info(market_slug: str) -> Optional[dict]:
         Market data dict or None if not found
     """
     try:
-        resp = requests.get(
+        resp = http_request(
+            "GET",
             f"{GAMMA_API_BASE}/markets",
             params={"slug": market_slug},
             timeout=10,
@@ -119,5 +127,6 @@ def get_market_info(market_slug: str) -> Optional[dict]:
             return markets[0] if isinstance(markets, list) else markets
         return None
         
-    except Exception:
+    except Exception as e:
+        logger.debug("Failed to fetch market info for %s: %s", market_slug, e)
         return None

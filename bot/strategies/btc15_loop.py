@@ -16,10 +16,23 @@ This module plugs into the main bot loop and uses the existing Bankr executor.
 import logging
 import os
 import time
-import requests
 from dataclasses import dataclass, field
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from typing import Optional, Dict, Any, NamedTuple
+
+
+def _utcnow() -> datetime:
+    """Return timezone-aware UTC datetime (Python 3.12+ compatible)."""
+    return datetime.now(timezone.utc)
+
+
+# Use shared HTTP client for retry/timeout consistency
+try:
+    from utils.http_client import get_json, post_json, delete as http_delete
+except ImportError:
+    import sys
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+    from utils.http_client import get_json, post_json, delete as http_delete
 
 # Import config - handle both direct run and module import
 try:
@@ -127,9 +140,8 @@ SIDECAR_URL = os.getenv("SIDECAR_URL", BANKR_EXECUTOR_URL)
 def _load_states_from_sidecar() -> Dict[str, BracketState]:
     """Load persisted BTC15 states from sidecar SQLite."""
     try:
-        resp = requests.get(f"{SIDECAR_URL}/btc15/states", timeout=5)
-        if resp.ok:
-            data = resp.json()
+        data = get_json(f"{SIDECAR_URL}/btc15/states", timeout=5)
+        if data:
             states = {}
             for row in data.get("states", []):
                 states[row["slug"]] = BracketState(
@@ -158,7 +170,7 @@ def _save_state_to_sidecar(slug: str, state: BracketState) -> None:
             "losses_in_row": state.losses_in_row,
             "trade_id": state.trade_id,
         }
-        requests.post(f"{SIDECAR_URL}/btc15/state", json=payload, timeout=5)
+        post_json(f"{SIDECAR_URL}/btc15/state", payload, timeout=5)
     except Exception as e:
         logging.warning("[BTC15] Failed to save state to sidecar: %s", e)
 
@@ -166,7 +178,7 @@ def _save_state_to_sidecar(slug: str, state: BracketState) -> None:
 def _delete_state_from_sidecar(slug: str) -> None:
     """Delete a BTC15 state from sidecar SQLite."""
     try:
-        requests.delete(f"{SIDECAR_URL}/btc15/state/{slug}", timeout=5)
+        http_delete(f"{SIDECAR_URL}/btc15/state/{slug}", timeout=5)
     except Exception as e:
         logging.warning("[BTC15] Failed to delete state from sidecar: %s", e)
 
@@ -191,12 +203,11 @@ def _open_btc15_trade(
             "entry_side": entry_side,
             "entry_price": entry_price,
             "size_shares": size_shares,
-            "opened_at": datetime.utcnow().isoformat(),
+            "opened_at": _utcnow().isoformat(),
             "mode": "DRY_RUN" if dry_run else "LIVE",
         }
-        resp = requests.post(f"{SIDECAR_URL}/btc15/trade-open", json=payload, timeout=5)
-        if resp.ok:
-            data = resp.json()
+        data = post_json(f"{SIDECAR_URL}/btc15/trade-open", payload, timeout=5)
+        if data:
             return data.get("id")
     except Exception as e:
         logging.warning("[BTC15] Failed to open trade: %s", e)
@@ -215,11 +226,11 @@ def _hedge_btc15_trade(
             "id": trade_id,
             "hedge_side": hedge_side,
             "hedge_price": hedge_price,
-            "hedged_at": datetime.utcnow().isoformat(),
+            "hedged_at": _utcnow().isoformat(),
             "hedge_cost": hedge_cost,
         }
-        resp = requests.post(f"{SIDECAR_URL}/btc15/trade-hedge", json=payload, timeout=5)
-        return resp.ok
+        post_json(f"{SIDECAR_URL}/btc15/trade-hedge", payload, timeout=5)
+        return True
     except Exception as e:
         logging.warning("[BTC15] Failed to hedge trade: %s", e)
     return False
@@ -234,10 +245,10 @@ def _flatten_btc15_trade(
         payload = {
             "id": trade_id,
             "sale_proceeds": sale_proceeds,
-            "resolved_at": datetime.utcnow().isoformat(),
+            "resolved_at": _utcnow().isoformat(),
         }
-        resp = requests.post(f"{SIDECAR_URL}/btc15/trade-flatten", json=payload, timeout=5)
-        return resp.ok
+        post_json(f"{SIDECAR_URL}/btc15/trade-flatten", payload, timeout=5)
+        return True
     except Exception as e:
         logging.warning("[BTC15] Failed to flatten trade: %s", e)
     return False
@@ -257,11 +268,10 @@ def _resolve_btc15_trade(
         payload = {
             "id": trade_id,
             "payout": payout,
-            "resolved_at": datetime.utcnow().isoformat(),
+            "resolved_at": _utcnow().isoformat(),
         }
-        resp = requests.post(f"{SIDECAR_URL}/btc15/trade-resolve", json=payload, timeout=5)
-        if resp.ok:
-            data = resp.json()
+        data = post_json(f"{SIDECAR_URL}/btc15/trade-resolve", payload, timeout=5)
+        if data:
             logging.info("[BTC15] Trade %d resolved: PnL=$%.2f", trade_id, data.get("realized_pnl", 0))
             return True
     except Exception as e:
@@ -293,7 +303,7 @@ def _log_activity(
             "dry_run": 1 if dry_run else 0,
             "result": result,
         }
-        requests.post(f"{SIDECAR_URL}/btc15/activity", json=payload, timeout=5)
+        post_json(f"{SIDECAR_URL}/btc15/activity", payload, timeout=5)
     except Exception as e:
         logging.warning("[BTC15] Failed to log activity: %s", e)
 
@@ -306,16 +316,8 @@ def _send_bankr_command(command: str, estimated_usdc: float, dry_run: bool = Tru
             "dry_run": dry_run,
             "estimated_usdc": estimated_usdc,
         }
-        resp = requests.post(
-            f"{SIDECAR_URL}/prompt",
-            json=payload,
-            timeout=60,
-        )
-        if resp.ok:
-            return resp.json()
-        else:
-            logging.warning("[BTC15] Bankr command failed: %s", resp.text[:200])
-            return None
+        data = post_json(f"{SIDECAR_URL}/prompt", payload, timeout=60)
+        return data
     except Exception as e:
         logging.error("[BTC15] Bankr request error: %s", e)
         return None
@@ -340,12 +342,12 @@ class BTC15Loop:
         self.log = logger or logging.getLogger(__name__)
         self.state_by_market: Dict[str, BracketState] = _load_states_from_sidecar()
         self.daily_loss: float = 0.0
-        self.daily_reset_date: date = datetime.utcnow().date()
+        self.daily_reset_date: date = _utcnow().date()
         self._last_command_time: float = 0.0
 
     def _reset_daily_if_needed(self) -> None:
         """Reset daily loss counter on new day."""
-        today = datetime.utcnow().date()
+        today = _utcnow().date()
         if today != self.daily_reset_date:
             self.log.info("[BTC15] New day - resetting daily loss counter")
             self.daily_loss = 0.0
@@ -367,6 +369,9 @@ class BTC15Loop:
           - Volume >= min_volume_usdc (relaxed for btc-updown-15m pattern)
           - Time to expiry between 5 and 30 minutes (relaxed for btc-updown-15m pattern)
         """
+        if market.get("closed") is True:
+            return False
+
         slug = str(market.get("slug", "")).lower()
         
         # Dev-only: force match on specific slug for testing (EXCLUSIVE mode)
@@ -374,7 +379,7 @@ class BTC15Loop:
         if force_slug:
             # When force_test_slug is set, ONLY that slug is allowed
             if slug == force_slug.lower():
-                self.log.info("[BTC15] ✅ FORCE_TEST_SLUG matched: %s", slug)
+                self.log.info("[BTC15] [FORCE_TEST_SLUG] matched: %s", slug)
                 return True
             else:
                 # Skip all other markets when testing
@@ -385,8 +390,7 @@ class BTC15Loop:
         if "btc-updown-15m" in slug:
             # Skip volume check for btc-updown-15m - these are new and may have $0 volume
             # We want to monitor them for arb opportunities as liquidity builds
-            self.log.info("[BTC15] ✅ BTC-UPDOWN-15M matched: %s (vol=$%.0f)", slug, volume_usdc)
-            return True
+            self.log.info("[BTC15] [BTC-UPDOWN-15M] matched: %s (vol=$%.0f)", slug, volume_usdc)
             return True
         
         # Use the dedicated candidate detector for other patterns
@@ -408,15 +412,14 @@ class BTC15Loop:
             self.log.debug("[BTC15] %s: expiry %d mins not in 5-30 range", slug, minutes_to_expiry)
             return False
         
-        self.log.info("[BTC15] ✅ Market MATCHED: %s (vol=$%.0f, expiry=%d min)", slug, volume_usdc, minutes_to_expiry)
+        self.log.info("[BTC15] [MATCH] %s (vol=$%.0f, expiry=%d min)", slug, volume_usdc, minutes_to_expiry)
         return True
 
     def _daily_loss_exceeded(self) -> bool:
         """Check if daily loss limit has been exceeded by querying sidecar stats."""
         try:
-            resp = requests.get(f"{SIDECAR_URL}/btc15/stats", timeout=5)
-            if resp.ok:
-                data = resp.json()
+            data = get_json(f"{SIDECAR_URL}/btc15/stats", timeout=5)
+            if data:
                 today_pnl = data.get("today", {}).get("realized_pnl", 0)
                 if today_pnl <= -self.cfg.daily_max_loss:
                     self.log.warning("[BTC15] Daily loss cap hit: $%.2f <= -$%.2f", today_pnl, self.cfg.daily_max_loss)
@@ -521,7 +524,7 @@ class BTC15Loop:
             return 0
         
         self.log.info(
-            "[BTC15] 🎯 ARB DETECTED: %s sum=%.3f < %.3f (edge=%.1f¢)",
+            "[BTC15] [ARB] %s sum=%.3f < %.3f (edge=%.1fc)",
             slug, price_sum, max_sum_for_entry, (1.0 - price_sum) * 100
         )
         
@@ -583,7 +586,7 @@ Do NOT buy the opposite side yet. Just acquire the cheap {cheap_side} position."
             )
             
             # Update state
-            state.last_entry_ts = datetime.utcnow()
+            state.last_entry_ts = _utcnow()
             state.unhedged_side = cheap_side
             state.unhedged_cost = stake  # Approximate
             state.unhedged_size = size_shares
@@ -639,7 +642,7 @@ Do NOT buy the opposite side yet. Just acquire the cheap {cheap_side} position."
         edge_cents = (total_payout - total_cost) * 100
         
         self.log.debug(
-            "[BTC15] %s: edge check - unhedged %s, cost $%.2f, other_cost $%.2f, edge %.1f¢",
+            "[BTC15] %s: edge check - unhedged %s, cost $%.2f, other_cost $%.2f, edge %.1fc",
             slug, state.unhedged_side, state.unhedged_cost, other_cost, edge_cents
         )
         
@@ -666,7 +669,7 @@ ACTION: Buy {other_side} shares to match our {state.unhedged_side} position.
 - Use limit orders
 - This completes the bracket - ONE side will pay $1 at settlement"""
 
-            self.log.info("[BTC15] Hedge signal: %s %s @ %.3f, edge %.1f¢", slug, other_side, other_prices.ask, edge_cents)
+            self.log.info("[BTC15] Hedge signal: %s %s @ %.3f, edge %.1fc", slug, other_side, other_prices.ask, edge_cents)
             
             result = _send_bankr_command(prompt, stake, dry_run=dry_run)
             
@@ -715,7 +718,7 @@ ACTION: Buy {other_side} shares to match our {state.unhedged_side} position.
             return 0
         
         # Check timeout / near-expiry condition
-        now = datetime.utcnow()
+        now = _utcnow()
         elapsed_sec = (now - state.last_entry_ts).total_seconds() if state.last_entry_ts else 9999
         minutes_to_expiry = market.get("minutes_to_expiry") or market.get("time_to_expiry_minutes", 999)
         
@@ -810,12 +813,12 @@ ACTION: Sell our {state.unhedged_side} position.
         
         # Check daily loss limit (in-memory)
         if self.daily_loss <= -self.cfg.daily_max_loss:
-            self.log.warning("[BTC15] ⏸️ Daily loss limit reached (in-memory: $%.2f)", self.daily_loss)
+            self.log.warning("[BTC15] PAUSED - Daily loss limit reached (in-memory: $%.2f)", self.daily_loss)
             return 0
         
         # Check daily loss limit (from sidecar DB - actual realized PnL)
         if self._daily_loss_exceeded():
-            self.log.warning("[BTC15] ⏸️ Daily loss cap exceeded (from sidecar stats)")
+            self.log.warning("[BTC15] PAUSED - Daily loss cap exceeded (from sidecar stats)")
             return 0
         
         # Check if this is a BTC15 market
@@ -827,7 +830,7 @@ ACTION: Sell our {state.unhedged_side} position.
         
         # Check losses in a row (streak pause)
         if state.losses_in_row >= self.cfg.max_losses_before_pause:
-            self.log.warning("[BTC15] ⏸️ %s: PAUSED after %d consecutive losses", slug, state.losses_in_row)
+            self.log.warning("[BTC15] PAUSED - %s: stopped after %d consecutive losses", slug, state.losses_in_row)
             return 0
         
         # Check max open brackets
@@ -838,7 +841,7 @@ ACTION: Sell our {state.unhedged_side} position.
         
         # Check cooldown (for new entries only)
         if not state.unhedged_side and state.last_entry_ts:
-            elapsed = (datetime.utcnow() - state.last_entry_ts).total_seconds()
+            elapsed = (_utcnow() - state.last_entry_ts).total_seconds()
             if elapsed < self.cfg.cooldown_sec:
                 self.log.debug("[BTC15] %s: cooldown (%.0fs < %ds)", slug, elapsed, self.cfg.cooldown_sec)
                 return 0

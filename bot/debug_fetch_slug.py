@@ -49,9 +49,9 @@ def scan_btc_updown_15m() -> list:
         event = fetch_by_slug(slug)
         if event:
             results.append(event)
-            print(f"  ✓ Found: {slug}")
+            print(f"  [OK] Found: {slug}")
         else:
-            print(f"  ✗ Not found: {slug}")
+            print(f"  [MISS] Not found: {slug}")
     
     return results
 
@@ -85,9 +85,9 @@ def print_event_summary(event: dict):
             price_str = str(prices)
         
         vol = m.get("volume") or m.get("volumeNum") or 0
-        closed = "✗ CLOSED" if m.get("closed") else "✓ OPEN"
+        closed = "CLOSED" if m.get("closed") else "OPEN"
         
-        print(f"  {closed} | {slug[:50]:50} | {price_str} | vol=${vol}")
+        print(f"  [{closed}] | {slug[:50]:50} | {price_str} | vol=${vol}")
     
     print("=" * 70)
 

@@ -61,6 +61,80 @@ Need help, have questions, or want to collaborate? Reach out!
 
 This project includes integration with [Bankr](https://bankr.bot) for automated trading execution.
 
+## Direct Polymarket CLOB Execution (Fast Path)
+
+If Bankr prompt latency is too slow for your edge, you can have the bot sign + submit orders directly to Polymarket’s CLOB using a Polygon hot wallet.
+
+### Safety First (recommended)
+
+- Create a fresh hot wallet for the bot (do not use your main wallet).
+- Keep the hot wallet balance small and capped.
+- Never commit your private key.
+
+### Install
+
+Direct execution uses Polymarket’s official Python client:
+
+```bash
+pip install -r requirements.txt
+```
+
+### Required Environment Variables
+
+```bash
+# Hard kill switch (required for live orders)
+TRADING_ENABLED=false
+
+# Enable direct CLOB execution (default is Bankr)
+CLOB_EXECUTION_ENABLED=true
+
+# Polygon key used to sign orders
+POLYMARKET_PRIVATE_KEY=0x...
+
+# Signature type
+POLYMARKET_SIGNATURE_TYPE=0   # 0=EOA (default), 1=email/Magic, 2=browser proxy
+
+# Optional (proxy/funder mode)
+# If you're using EOA signing (signature_type=0), you typically leave this unset.
+POLYMARKET_FUNDER_ADDRESS=0x...
+```
+
+### Execution Guardrails (BTC15 two-phase)
+
+These env vars control the two-phase executor:
+
+```bash
+# Per-bracket + daily caps (0 disables)
+BTC15_MAX_ESTIMATED_USDC_PER_BRACKET=0
+BTC15_DAILY_ESTIMATED_USDC_CAP=0
+
+# Concurrency brake
+BTC15_MAX_OPEN_BRACKETS=2
+
+# Optional explicit backend selection
+BTC15_EXECUTION_BACKEND=bankr   # or clob
+
+# If clob fails to initialize, fall back to Bankr
+BTC15_ALLOW_BANKR_FALLBACK=true
+```
+
+Notes:
+- Live orders are blocked unless `TRADING_ENABLED=true`.
+- The direct executor derives CLOB API credentials once at startup and keeps a warm client.
+- Fills are confirmed by polling `get_order(order_id)` (until WebSockets are added).
+
+For a ready-to-edit template, see [.env.example](.env.example).
+
+### Optional: WebSocket book snapshots
+
+To avoid per-tick REST book fetches, enable the market-channel subscriber:
+
+```bash
+BTC15_WSS_ENABLED=true
+```
+
+This maintains in-memory orderbook snapshots for subscribed token IDs and falls back to REST if a snapshot is not available yet.
+
 ### Trading Modes
 
 **1. Polymarket Mode (default)**

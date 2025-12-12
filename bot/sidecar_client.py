@@ -1,11 +1,19 @@
 # bot/sidecar_client.py
 """
 Simple HTTP client for communicating with the Node.js sidecar.
+Uses the shared HTTP client for consistent retry/timeout behavior.
 """
 
 import os
-import requests
 from typing import Any, Optional
+
+# Import shared HTTP client
+try:
+    from utils.http_client import request as http_request, session as http_session
+except ImportError:
+    import sys
+    sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+    from utils.http_client import request as http_request, session as http_session
 
 
 class SidecarClient:
@@ -14,13 +22,13 @@ class SidecarClient:
     def __init__(self, base_url: Optional[str] = None):
         self.base_url = base_url or os.getenv("SIDECAR_BASE_URL", "http://localhost:4000")
 
-    def get(self, path: str, **kwargs) -> requests.Response:
+    def get(self, path: str, **kwargs):
         """GET request to sidecar."""
-        return requests.get(f"{self.base_url}{path}", timeout=10, **kwargs)
+        return http_request("GET", f"{self.base_url}{path}", timeout=10, **kwargs)
 
-    def post(self, path: str, json: Any = None, **kwargs) -> requests.Response:
+    def post(self, path: str, json: Any = None, **kwargs):
         """POST request to sidecar."""
-        return requests.post(f"{self.base_url}{path}", json=json, timeout=10, **kwargs)
+        return http_request("POST", f"{self.base_url}{path}", timeout=10, json=json, **kwargs)
 
     def get_status(self) -> dict:
         """Get bot status and guardrails."""

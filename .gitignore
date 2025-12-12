@@ -7,3 +7,6 @@ log.log
 .DS_Store
 sidecar/node_modules/
 sidecar/.env
+
+# Local secrets
+.env

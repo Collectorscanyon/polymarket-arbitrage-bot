@@ -1,8 +1,9 @@
 import logging
 import time
-import requests
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional
+
+from utils.http_client import request as http_request
 
 from config import (
 	ARB_THRESHOLD,
@@ -51,7 +52,8 @@ def fetch_btc_updown_15m_markets() -> List[dict]:
 	Fetch btc-updown-15m markets directly by timestamp.
 	These short-lived intraday markets don't appear in standard queries.
 	"""
-	results = []
+	results: List[dict] = []
+	seen_ids: set[str] = set()
 	now = datetime.now(timezone.utc)
 	
 	# Check for events in the next 2 hours (every 15 min = 8 potential events)
@@ -63,16 +65,26 @@ def fetch_btc_updown_15m_markets() -> List[dict]:
 		
 		slug = f"btc-updown-15m-{timestamp}"
 		try:
-			resp = requests.get(f"https://gamma-api.polymarket.com/events?slug={slug}", timeout=3)
+			resp = http_request(
+				"GET",
+				"https://gamma-api.polymarket.com/events",
+				params={"slug": slug},
+				timeout=3,
+			)
 			if resp.ok:
 				data = resp.json()
 				for event in data:
 					for m in event.get("markets", []):
 						if not m.get("closed"):  # Only include open markets
+							condition_id = str(m.get("conditionId") or "")
+							if condition_id and condition_id in seen_ids:
+								continue
+							if condition_id:
+								seen_ids.add(condition_id)
 							m["_source"] = "btc-updown-direct"
 							results.append(m)
-		except Exception:
-			pass
+		except Exception as e:
+			logger.debug("[FETCH] btc-updown-direct failed for %s: %s", slug, e)
 	
 	return results
 
@@ -82,10 +94,14 @@ def fetch_active_events_latest(limit: int = 50) -> List[dict]:
 	Fetch the newest open events (order by id descending).
 	Returns open markets from these events - catches intraday btc-updown-15m.
 	"""
-	results = []
+	results: List[dict] = []
 	try:
-		url = f"https://gamma-api.polymarket.com/events?order=id&ascending=false&closed=false&limit={limit}"
-		resp = requests.get(url, timeout=5)
+		resp = http_request(
+			"GET",
+			"https://gamma-api.polymarket.com/events",
+			params={"order": "id", "ascending": "false", "closed": "false", "limit": str(limit)},
+			timeout=5,
+		)
 		if resp.ok:
 			events = resp.json()
 			for ev in events:
@@ -93,9 +109,9 @@ def fetch_active_events_latest(limit: int = 50) -> List[dict]:
 					if not m.get("closed"):
 						m["_source"] = "events-latest"
 						results.append(m)
-			logging.info(f"[FETCH] events-latest: {len(events)} events → {len(results)} open markets")
+			logger.info("[FETCH] events-latest: %d events -> %d open markets", len(events), len(results))
 	except Exception as e:
-		logging.warning(f"[FETCH] events-latest failed: {e}")
+		logger.warning("[FETCH] events-latest failed: %s", e)
 	return results
 
 

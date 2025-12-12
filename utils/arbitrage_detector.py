@@ -7,7 +7,7 @@ class ArbitrageDetector:
         self.minimum_price_gap = minimum_price_gap
         self.probability = probability
 
-    def detect_arbitrage_opportunity(self) -> tuple[bool, str]:
+    def detect_arbitrage_opportunity(self) -> bool:
         """Determines whether an arbitrage opportunity exists"""
 
         if self.probability < 100 - self.minimum_price_gap:
@@ -16,5 +16,5 @@ class ArbitrageDetector:
 
         else:
             log6.info(f"No arbitrage opportunity: {self.probability:.2f}")
-            return True
+            return False
             

@@ -135,7 +135,7 @@ wallets:
         )
 
         self.processes[wallet.name] = bot_proc
-        print(f"[{wallet.name}] ✓ Started (PID {proc.pid})")
+        print(f"[{wallet.name}] STARTED (PID {proc.pid})")
 
         return bot_proc
 
@@ -148,7 +148,7 @@ wallets:
             self.start_wallet(wallet)
             time.sleep(1)  # Stagger starts
 
-        print(f"\n✓ Fleet started with {len(self.processes)} bot(s)")
+        print(f"\nFLEET STARTED with {len(self.processes)} bot(s)")
 
     def stop_wallet(self, name: str):
         """Stop a specific wallet's bot."""
@@ -166,7 +166,7 @@ wallets:
             proc.process.kill()
 
         del self.processes[name]
-        print(f"[{name}] ✓ Stopped")
+        print(f"[{name}] STOPPED")
 
     def stop_all(self):
         """Stop all running bots."""
@@ -179,7 +179,7 @@ wallets:
         for name in list(self.processes.keys()):
             self.stop_wallet(name)
 
-        print("\n✓ All bots stopped")
+        print("\nALL BOTS STOPPED")
 
     def status(self):
         """Print status of all wallets."""
@@ -188,14 +188,14 @@ wallets:
         print("=" * 60)
 
         for wallet in self.wallets:
-            status = "🟢 RUNNING" if wallet.name in self.processes else "⚫ STOPPED"
-            enabled = "✓" if wallet.enabled else "✗"
+            status = "RUNNING" if wallet.name in self.processes else "STOPPED"
+            enabled = "YES" if wallet.enabled else "NO"
 
             if wallet.name in self.processes:
                 proc = self.processes[wallet.name]
                 uptime = int(time.time() - proc.start_time)
                 uptime_str = f"{uptime // 60}m {uptime % 60}s"
-                status = f"🟢 RUNNING (PID {proc.pid}, uptime: {uptime_str})"
+                status = f"RUNNING (PID {proc.pid}, uptime: {uptime_str})"
 
             print(f"\n[{wallet.name}]")
             print(f"  Status:      {status}")

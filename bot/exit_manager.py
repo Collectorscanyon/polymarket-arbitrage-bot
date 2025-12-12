@@ -180,7 +180,7 @@ class ExitManager:
             })
 
             if resp.status_code == 200:
-                log.info(f"{tag} ✓ Close request sent for position #{pos_id}")
+                log.info(f"{tag} Close request sent for position #{pos_id}")
                 self._triggered_exits.add(pos_id)
                 return True
             else:
