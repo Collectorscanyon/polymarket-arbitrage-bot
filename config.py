@@ -13,12 +13,42 @@ from typing import List
 # Load .env file from project root if it exists
 _env_path = Path(__file__).parent / ".env"
 if _env_path.exists():
-    with open(_env_path) as f:
+    def _strip_inline_comment(raw_value: str) -> str:
+        # Remove trailing inline comments like: VALUE  # comment
+        # Preserve literal '#' when not preceded by whitespace.
+        in_single = False
+        in_double = False
+        for i, ch in enumerate(raw_value):
+            if ch == "'" and not in_double:
+                in_single = not in_single
+            elif ch == '"' and not in_single:
+                in_double = not in_double
+            elif ch == "#" and not in_single and not in_double:
+                if i == 0 or raw_value[i - 1].isspace():
+                    return raw_value[:i].rstrip()
+        return raw_value.strip()
+
+    with open(_env_path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
-            if line and not line.startswith("#") and "=" in line:
-                key, _, value = line.partition("=")
-                os.environ.setdefault(key.strip(), value.strip())
+            if not line or line.startswith("#"):
+                continue
+
+            if line.startswith("export "):
+                line = line[len("export ") :].lstrip()
+
+            if "=" not in line:
+                continue
+
+            key, _, value = line.partition("=")
+            key = key.strip()
+            value = _strip_inline_comment(value.strip())
+
+            if len(value) >= 2 and ((value[0] == value[-1] == '"') or (value[0] == value[-1] == "'")):
+                value = value[1:-1]
+
+            if key:
+                os.environ.setdefault(key, value)
 
 
 def _float(name: str, default: float) -> float:

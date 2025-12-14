@@ -240,6 +240,11 @@ class CLOBOrderbookFetcher:
     def fetch_orderbook(self, token_id: str) -> Optional[MarketOrderbook]:
         """Fetch orderbook for a single token."""
         start = time.time()
+
+        token_id = str(token_id).strip().strip('"')
+        if (not token_id) or (token_id in ("[", "]", "\"")) or (len(token_id) < 5):
+            log.debug("[CLOB] Skipping invalid token_id=%r", token_id)
+            return None
         
         try:
             url = f"{CLOB_API_BASE}/book?token_id={token_id}"

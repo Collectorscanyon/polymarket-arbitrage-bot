@@ -66,7 +66,15 @@ class BTC15WSBookCache:
     def __init__(self):
         self._lock = threading.Lock()
         self._books: Dict[str, _TokenBookState] = {}
+        self._dirty_token_ids: Set[str] = set()
         self._update_event = threading.Event()
+
+    def drain_dirty_token_ids(self) -> Set[str]:
+        """Return and clear the set of token_ids updated since last drain."""
+        with self._lock:
+            dirty = set(self._dirty_token_ids)
+            self._dirty_token_ids.clear()
+        return dirty
 
     def apply_market_event(self, msg: Dict[str, Any]) -> None:
         event_type = (msg.get("event_type") or msg.get("type") or "").lower()
@@ -104,6 +112,7 @@ class BTC15WSBookCache:
                     asks_by_price=asks_by_price,
                     last_ts=ts,
                 )
+                self._dirty_token_ids.add(token_id)
             self._update_event.set()
             return
 
@@ -138,6 +147,8 @@ class BTC15WSBookCache:
                             st.asks_by_price[price] = size
 
                     st.last_ts = ts
+
+                    self._dirty_token_ids.add(token_id)
 
             self._update_event.set()
             return
@@ -175,6 +186,23 @@ class CLOBMarketWSSubscriber:
         self._thread: Optional[threading.Thread] = None
         self._stop = threading.Event()
         self._ws = None
+
+        self._connected: bool = False
+        self._last_message_ts: float = 0.0
+
+    def get_status(self) -> Dict[str, Any]:
+        """Lightweight status snapshot for dashboards/telemetry."""
+        with self._lock:
+            connected = bool(self._connected)
+            last_ts = float(self._last_message_ts)
+        age = None
+        if last_ts > 0:
+            age = max(0.0, time.time() - last_ts)
+        return {
+            "connected": connected,
+            "last_message_ts": last_ts if last_ts > 0 else None,
+            "last_message_age_sec": age,
+        }
 
     def start(self, asset_ids: Iterable[str]) -> None:
         with self._lock:
@@ -225,6 +253,8 @@ class CLOBMarketWSSubscriber:
 
         def on_open(ws):
             self._ws = ws
+            with self._lock:
+                self._connected = True
             backoff_local = 1.0
             try:
                 self._send_subscribe()
@@ -247,6 +277,8 @@ class CLOBMarketWSSubscriber:
                 return
             if message == "PONG" or message == "PING":
                 return
+            with self._lock:
+                self._last_message_ts = time.time()
             try:
                 msg = json.loads(message)
             except Exception:
@@ -259,6 +291,8 @@ class CLOBMarketWSSubscriber:
 
         def on_close(ws, close_status_code, close_msg):
             log.debug("[BTC15WSS] closed: %s %s", close_status_code, close_msg)
+            with self._lock:
+                self._connected = False
 
         while not self._stop.is_set():
             try:

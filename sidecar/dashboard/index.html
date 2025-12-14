@@ -35,6 +35,14 @@
     .side-yes { color: var(--success); font-weight: 600; } .side-no { color: var(--danger); font-weight: 600; } .pnl-positive { color: var(--success); } .pnl-negative { color: var(--danger); } .mono { font-family: monospace; }
     .edit-btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10px; } .edit-btn:hover { background: var(--accent); }
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; } .modal-overlay.active { display: flex; } .modal { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 24px; min-width: 320px; } .modal h3 { margin-bottom: 16px; } .modal-field { margin-bottom: 12px; } .modal-field label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 4px; } .modal-field input { width: 100%; padding: 8px; background: var(--accent); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-size: 14px; } .modal-buttons { display: flex; gap: 8px; margin-top: 16px; }
+
+    /* BTC15: flash highlight on ACTIONABLE */
+    .btc15-flash { animation: btc15Flash 1.0s ease-in-out 0s 2; }
+    @keyframes btc15Flash {
+      0%   { filter: brightness(1); transform: translateY(0); }
+      50%  { filter: brightness(1.25); transform: translateY(-1px); }
+      100% { filter: brightness(1); transform: translateY(0); }
+    }
     @media (max-width: 1200px) { .dashboard { grid-template-columns: 1fr; } .header, .positions-section { grid-column: 1; } }
   </style>
 </head>
@@ -46,15 +54,46 @@
       <div class="card"><h2>🎯 Exit Manager</h2><div class="status-row"><div id="exitMgrDot" class="status-dot"></div><span id="exitMgrText" class="status-text">Checking...</span><span id="exitMgrUptime" class="uptime"></span></div><div class="btn-row"><button id="startExitBtn" class="btn btn-success" onclick="startExitManager()">▶ Start</button><button id="stopExitBtn" class="btn btn-danger" onclick="stopExitManager()">■ Stop</button></div><table class="settings-table" style="margin-top:12px"><tr><td>TP</td><td id="tpThreshold">+2.2%</td></tr><tr><td>SL</td><td id="slThreshold">-0.95%</td></tr><tr><td>Max Hold</td><td id="maxHold">16h</td></tr><tr><td>Flatten Hour</td><td id="flattenHour">23:00</td></tr><tr><td>Dry-Run</td><td id="exitDryRun"><span class="badge badge-danger">OFF</span></td></tr></table></div>
       <div class="card"><h2>🛡️ Guardrails</h2><table class="settings-table"><tr><td>Dry-Run</td><td id="dryRun"><span class="badge badge-danger">OFF</span></td></tr><tr><td>Max/Prompt</td><td id="maxUsdc">$0</td></tr><tr><td>Daily Cap</td><td id="dailyCap">$0</td></tr><tr><td>Spent Today</td><td id="spentToday">$0.00</td></tr></table></div>
       <div class="card"><h2>₿ BTC 15m Loop</h2><div class="status-row"><div id="btc15StatusDot" class="status-dot"></div><span id="btc15StatusText" class="status-text">Loading...</span></div><table class="settings-table"><tr><td>Enabled</td><td id="btc15Enabled"><span class="badge badge-danger">OFF</span></td></tr><tr><td>Max Bracket</td><td id="btc15MaxBracket">$40</td></tr><tr><td>Open Brackets</td><td id="btc15OpenBrackets">0</td></tr><tr><td>Today</td><td id="btc15Today">0 trades</td></tr><tr><td>Today W/L</td><td id="btc15WinLoss">0 / 0</td></tr><tr><td>Today Win Rate</td><td id="btc15WinRate">-</td></tr><tr><td>Today PnL</td><td id="btc15TodayPnl" class="mono">$0.00</td></tr><tr><td colspan="2" style="height:8px;border:none"></td></tr><tr><td>Lifetime W/L</td><td id="btc15LifetimeWinLoss">0 / 0</td></tr><tr><td>Lifetime PnL</td><td id="btc15LifetimePnl" class="mono">$0.00</td></tr></table></div>
+
+      <div class="card" id="btc15OpsCard"><h2>₿ BTC15 Ops</h2><table class="settings-table">
+        <tr><td>WS</td><td id="btc15WsStatus"><span class="badge badge-danger">DOWN</span></td></tr>
+        <tr><td>Last Msg</td><td id="btc15WsAge">-</td></tr>
+        <tr><td>Mode</td><td id="btc15Mode">Polling</td></tr>
+        <tr><td>Tick</td><td id="btc15TickMs" class="mono">-</td></tr>
+        <tr><td>Avg Tick (20)</td><td id="btc15AvgTickMs" class="mono">-</td></tr>
+        <tr><td>Efficiency</td><td id="btc15Efficiency" class="mono">-</td></tr>
+        <tr><td>Alerts</td><td id="btc15Alerts">-</td></tr>
+        <tr><td>Last ACTIONABLE</td><td id="btc15LastActionable" class="mono">-</td></tr>
+        <tr><td>ACTIONABLE (session)</td><td id="btc15ActionableCount" class="mono">0</td></tr>
+        <tr><td>Sound</td><td id="btc15SoundStatus" class="mono">click anywhere to enable</td></tr>
+        <tr><td>Eval</td><td id="btc15Eval">-</td></tr>
+        <tr><td>Dirty</td><td id="btc15Dirty" class="mono">-</td></tr>
+        <tr><td>Reqs</td><td id="btc15Reqs" class="mono">-</td></tr>
+        <tr><td>Edge</td><td id="btc15Edges" class="mono">-</td></tr>
+        <tr><td>Actions</td><td id="btc15Actions" class="mono">-</td></tr>
+        <tr><td>Error</td><td id="btc15LastError">-</td></tr>
+      </table>
+      <div class="btn-row" style="margin-top:12px">
+        <button id="btc15DemoBtn" class="btn" style="display:none" onclick="createBTC15DemoEvent()">Create Demo Event</button>
+      </div>
+      </div>
     </div>
     <div class="middle-column">
       <div class="card pnl-hero"><div class="label">Total P&amp;L</div><div id="totalPnl" class="value neutral">$0.00</div><div class="pnl-breakdown"><div class="pnl-stat"><div class="label">Realized</div><div id="realizedPnl" class="value">$0.00</div></div><div class="pnl-stat"><div class="label">Unrealized</div><div id="unrealizedPnl" class="value">$0.00</div></div><div class="pnl-stat"><div class="label">Net Exposure</div><div id="netExposure" class="value">$0.00</div></div></div></div>
       <div class="card"><h2>📈 Equity Curve</h2><div id="equityChart" class="equity-chart"><span style="color:var(--text-muted);margin:auto">No data</span></div></div>
       <div class="card"><h2>📊 Stats</h2><table class="settings-table"><tr><td>Open Positions</td><td id="openCount">0</td></tr><tr><td>YES Exposure</td><td id="yesExposure">$0.00</td></tr><tr><td>NO Exposure</td><td id="noExposure">$0.00</td></tr></table></div>
     </div>
-    <div class="right-column"><div class="card" style="flex:1"><h2>📝 Activity</h2><div id="activityFeed" class="activity-feed"><p style="color:var(--text-muted);text-align:center">Loading...</p></div></div></div>
+    <div class="right-column">
+      <div class="card" id="btc15DecisionsCard" style="flex:1">
+        <h2>🧠 BTC15 Decisions</h2>
+        <div id="btc15DecisionFeed" class="activity-feed"><p style="color:var(--text-muted);text-align:center">Loading...</p></div>
+      </div>
+      <div class="card" style="flex:1"><h2>📝 Activity</h2><div id="activityFeed" class="activity-feed"><p style="color:var(--text-muted);text-align:center">Loading...</p></div></div>
+    </div>
     <div class="positions-section card"><h2>💼 Open Positions</h2><table class="positions-table"><thead><tr><th>Time</th><th>Market</th><th>Side</th><th>Size</th><th>Entry</th><th>Current</th><th>Unrealized</th><th>Actions</th></tr></thead><tbody id="positionsBody"><tr><td colspan="8" style="text-align:center;color:var(--text-muted)">No open positions</td></tr></tbody></table></div>
     <div class="positions-section card"><h2>₿ BTC15 Trades <button class="edit-btn" onclick="toggleBTC15Trades()" id="btc15ToggleBtn">Show</button></h2><div id="btc15TradesSection" style="display:none"><table class="positions-table"><thead><tr><th>Time</th><th>Market</th><th>Mode</th><th>Status</th><th>Entry</th><th>Hedge</th><th>PnL</th></tr></thead><tbody id="btc15TradesBody"><tr><td colspan="7" style="text-align:center;color:var(--text-muted)">No BTC15 trades</td></tr></tbody></table></div></div>
+
+    <div class="positions-section card"><h2>₿ BTC15 Telemetry <button class="edit-btn" onclick="toggleBTC15Telemetry()" id="btc15TelToggleBtn">Show</button></h2><div id="btc15TelemetrySection" style="display:none"><table class="positions-table"><thead><tr><th>Time</th><th>WS</th><th>Mode</th><th>Tick ms</th><th>Tradeable</th><th>Evaluated</th><th>Dirty</th><th>Edge (seen/act)</th><th>Reqs (G/C/S)</th><th>Actions</th><th>Error</th></tr></thead><tbody id="btc15TelemetryBody"><tr><td colspan="11" style="text-align:center;color:var(--text-muted)">No telemetry yet</td></tr></tbody></table></div></div>
   </div>
   <div id="editModal" class="modal-overlay"><div class="modal"><h3>Edit Position Overrides</h3><input type="hidden" id="editPosId"/><div class="modal-field"><label>Take-Profit %</label><input type="number" id="editTp" step="0.1" placeholder="e.g. 3.0"/></div><div class="modal-field"><label>Stop-Loss %</label><input type="number" id="editSl" step="0.1" placeholder="e.g. -1.5"/></div><div class="modal-field"><label>Max Hold Hours</label><input type="number" id="editMaxHold" step="1" placeholder="e.g. 24"/></div><div class="modal-buttons"><button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-success" onclick="saveOverrides()">Save</button></div></div></div>
   <script>
@@ -74,12 +113,308 @@
     async function fetchBTC15Status() { try { const data = await fetchJson(API_BASE+'/btc15/stats'); const s = data.stats||{}; const t = data.today||{}; const lt = data.lifetime||{}; const dot = document.getElementById('btc15StatusDot'); const text = document.getElementById('btc15StatusText'); if (s.enabled) { dot.classList.add('running'); text.textContent = 'Active'; text.classList.add('running'); document.getElementById('btc15Enabled').innerHTML = '<span class="badge badge-success">ON</span>'; } else { dot.classList.remove('running'); text.textContent = 'Disabled'; text.classList.remove('running'); document.getElementById('btc15Enabled').innerHTML = '<span class="badge badge-danger">OFF</span>'; } document.getElementById('btc15MaxBracket').textContent = '$'+(s.max_bracket_usdc||40); document.getElementById('btc15OpenBrackets').textContent = s.open_brackets||0; document.getElementById('btc15Today').textContent = (t.trades||0)+' trades'; document.getElementById('btc15WinLoss').textContent = (t.wins||0)+' / '+(t.losses||0); const tResolved = (t.wins||0)+(t.losses||0); document.getElementById('btc15WinRate').textContent = tResolved>0 ? (((t.wins||0)/tResolved)*100).toFixed(0)+'%' : '-'; const pnl = t.realized_pnl||0; const pnlEl = document.getElementById('btc15TodayPnl'); pnlEl.textContent = '$'+pnl.toFixed(2); pnlEl.className = 'mono '+(pnl>=0?'pnl-positive':'pnl-negative'); document.getElementById('btc15LifetimeWinLoss').textContent = (lt.wins||0)+' / '+(lt.losses||0); const ltPnl = lt.realized_pnl||0; const ltPnlEl = document.getElementById('btc15LifetimePnl'); ltPnlEl.textContent = '$'+ltPnl.toFixed(2); ltPnlEl.className = 'mono '+(ltPnl>=0?'pnl-positive':'pnl-negative'); } catch(e){ document.getElementById('btc15StatusText').textContent = 'Error'; } }
     let btc15TradesVisible = false;
     function toggleBTC15Trades() { btc15TradesVisible = !btc15TradesVisible; document.getElementById('btc15TradesSection').style.display = btc15TradesVisible ? 'block' : 'none'; document.getElementById('btc15ToggleBtn').textContent = btc15TradesVisible ? 'Hide' : 'Show'; if (btc15TradesVisible) fetchBTC15Trades(); }
-    async function fetchBTC15Trades() { try { const data = await fetchJson(API_BASE+'/btc15/trades?limit=50'); const trades = data.trades||[]; const tbody = document.getElementById('btc15TradesBody'); if (trades.length===0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">No BTC15 trades</td></tr>'; return; } tbody.innerHTML = trades.map(t => { const time = t.opened_at ? new Date(t.opened_at).toLocaleString() : '-'; const slug = (t.market_label || t.slug || '').slice(0,25); const mode = t.mode === 'LIVE' ? '<span class="badge badge-danger">LIVE</span>' : '<span class="badge badge-success">DRY</span>'; let status = t.status || 'UNKNOWN'; let statusCls = ''; if (status === 'RESOLVED') statusCls = 'pnl-positive'; else if (status === 'FLATTENED') statusCls = 'pnl-negative'; else if (status === 'HEDGED') statusCls = 'side-yes'; const entry = t.entry_side + ' @ ' + (t.entry_price||0).toFixed(3); const hedge = t.hedge_side ? t.hedge_side + ' @ ' + (t.hedge_price||0).toFixed(3) : '-'; const pnl = t.realized_pnl || 0; const pnlCls = pnl >= 0 ? 'pnl-positive' : 'pnl-negative'; return '<tr><td>'+time+'</td><td title="'+t.slug+'">'+slug+'</td><td>'+mode+'</td><td class="'+statusCls+'">'+status+'</td><td class="mono">'+entry+'</td><td class="mono">'+hedge+'</td><td class="mono '+pnlCls+'">$'+pnl.toFixed(2)+'</td></tr>'; }).join(''); } catch(e) { console.error('BTC15 trades err:', e); } }
+    async function fetchBTC15Trades() { try { const data = await fetchJson(API_BASE+'/btc15/trades?limit=50'); const trades = data.trades||[]; const tbody = document.getElementById('btc15TradesBody'); if (trades.length===0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">No BTC15 trades</td></tr>'; return; } tbody.innerHTML = trades.map(t => { const time = t.opened_at ? new Date(t.opened_at).toLocaleString() : '-'; const slug = (t.market_label || t.slug || '').slice(0,25); let mode = '<span class="badge badge-success">DRY</span>'; if (t.mode === 'LIVE') mode = '<span class="badge badge-danger">LIVE</span>'; else if (t.mode === 'SIM') mode = '<span class="badge badge-success">SIM</span>'; let status = t.status || 'UNKNOWN'; let statusCls = ''; if (status === 'RESOLVED') statusCls = 'pnl-positive'; else if (status === 'FLATTENED') statusCls = 'pnl-negative'; else if (status === 'HEDGED') statusCls = 'side-yes'; const entry = t.entry_side + ' @ ' + (t.entry_price||0).toFixed(3); const hedge = t.hedge_side ? t.hedge_side + ' @ ' + (t.hedge_price||0).toFixed(3) : '-'; const pnl = t.realized_pnl || 0; const pnlCls = pnl >= 0 ? 'pnl-positive' : 'pnl-negative'; return '<tr><td>'+time+'</td><td title="'+t.slug+'">'+slug+'</td><td>'+mode+'</td><td class="'+statusCls+'">'+status+'</td><td class="mono">'+entry+'</td><td class="mono">'+hedge+'</td><td class="mono '+pnlCls+'">$'+pnl.toFixed(2)+'</td></tr>'; }).join(''); } catch(e) { console.error('BTC15 trades err:', e); } }
+
+    // ============================================================
+    // BTC15 ACTIONABLE ALERTS (client-side only)
+    // ============================================================
+    let __btc15LastActionableTs = 0;
+    let __btc15ActionableCount = 0;
+    let __btc15AudioArmed = false;
+    let __btc15AudioCtx = null;
+
+    function __btc15SetText(id, txt) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = txt;
+    }
+
+    function __btc15Flash(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.remove('btc15-flash');
+      // Force reflow so animation re-triggers
+      void el.offsetWidth;
+      el.classList.add('btc15-flash');
+      window.setTimeout(() => el.classList.remove('btc15-flash'), 2200);
+    }
+
+    function __btc15ArmAudio() {
+      try {
+        if (!__btc15AudioCtx) {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (!Ctx) {
+            __btc15SetText('btc15SoundStatus', 'unavailable');
+            return;
+          }
+          __btc15AudioCtx = new Ctx();
+        }
+
+        __btc15AudioCtx.resume()
+          .then(() => {
+            __btc15AudioArmed = true;
+            __btc15SetText('btc15SoundStatus', 'armed ✅');
+          })
+          .catch(() => {
+            __btc15SetText('btc15SoundStatus', 'blocked (click again)');
+          });
+      } catch (e) {
+        __btc15SetText('btc15SoundStatus', 'unavailable');
+      }
+    }
+
+    function __btc15Beep() {
+      try {
+        if (!__btc15AudioArmed || !__btc15AudioCtx || __btc15AudioCtx.state !== 'running') return;
+        const osc = __btc15AudioCtx.createOscillator();
+        const gain = __btc15AudioCtx.createGain();
+        gain.gain.value = 0.02;
+        osc.frequency.value = 880;
+        osc.connect(gain);
+        gain.connect(__btc15AudioCtx.destination);
+        osc.start();
+        osc.stop(__btc15AudioCtx.currentTime + 0.12);
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    // Arm sound on first user interaction (browser policy)
+    document.addEventListener('click', () => __btc15ArmAudio());
+
+    function __btc15HandleActionable(decisions) {
+      if (!Array.isArray(decisions) || decisions.length === 0) return;
+      const actionable = decisions
+        .filter(d => d && d.code === 'ACTIONABLE' && typeof d.ts_unix === 'number')
+        .sort((a, b) => a.ts_unix - b.ts_unix);
+      if (!actionable.length) return;
+
+      if (__btc15LastActionableTs === 0) {
+        // Initial load: set baseline but do not alert
+        __btc15LastActionableTs = actionable[actionable.length - 1].ts_unix;
+        return;
+      }
+
+      const newOnes = actionable.filter(d => d.ts_unix > __btc15LastActionableTs);
+      if (!newOnes.length) return;
+
+      for (const d of newOnes) {
+        __btc15LastActionableTs = d.ts_unix;
+        __btc15ActionableCount += 1;
+        __btc15SetText('btc15LastActionable', new Date(__btc15LastActionableTs).toLocaleString());
+        __btc15SetText('btc15ActionableCount', String(__btc15ActionableCount));
+        __btc15Flash('btc15OpsCard');
+        __btc15Flash('btc15DecisionsCard');
+        __btc15Beep();
+      }
+    }
+
+    async function fetchBTC15Decisions() {
+      try {
+        const data = await fetchJson(API_BASE + '/btc15/decisions?limit=60');
+        const rowsAll = data.decisions || [];
+
+        // NEW: detect & alert on actionable (does not affect rendering)
+        __btc15HandleActionable(rowsAll);
+
+        const allow = new Set(['ACTIONABLE','NOT_FILLABLE','BOOK_EMPTY','KILL_SWITCH','ERROR']);
+        const rows = rowsAll.filter(d => allow.has((d.code || 'UNKNOWN').toString()));
+        const feed = document.getElementById('btc15DecisionFeed');
+        if (!rows.length) {
+          feed.innerHTML = '<p style="color:var(--text-muted);text-align:center">No decisions yet</p>';
+          return;
+        }
+        feed.innerHTML = rows.slice(0, 60).map(d => {
+          const time = d.ts ? new Date(d.ts).toLocaleTimeString() : '-';
+          const code = (d.code || 'UNKNOWN').toString();
+          const slug = (d.slug || '').toString();
+          const msg = (d.message || '').toString();
+          const edge = (d.edge_cents !== null && d.edge_cents !== undefined) ? (' • ' + Number(d.edge_cents).toFixed(1) + 'c') : '';
+          const header = code + edge + (slug ? (' • ' + slug.slice(0, 26)) : '');
+          return '<div class="activity-item"><div class="activity-header"><span class="activity-type">'+header+'</span><span class="activity-time">'+time+'</span></div><div class="activity-body">'+msg.slice(0, 140)+'</div></div>';
+        }).join('');
+      } catch (e) {
+        // Silent
+      }
+    }
+
+    async function probeBTC15DemoEnabled() {
+      try {
+        const data = await fetchJson(API_BASE + '/btc15/demo/status');
+        const enabled = !!(data && data.enabled);
+        const btn = document.getElementById('btc15DemoBtn');
+        if (btn) btn.style.display = enabled ? '' : 'none';
+      } catch (e) {
+        const btn = document.getElementById('btc15DemoBtn');
+        if (btn) btn.style.display = 'none';
+      }
+    }
+
+    async function createBTC15DemoEvent() {
+      const btn = document.getElementById('btc15DemoBtn');
+      const oldText = btn ? btn.textContent : '';
+      try {
+        if (btn) { btn.disabled = true; btn.textContent = 'Creating…'; }
+        const resp = await fetch(API_BASE + '/btc15/demo', { method: 'POST' });
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok || !data.ok) {
+          const err = (data && data.error) ? data.error : ('HTTP ' + resp.status);
+          alert('Demo event failed: ' + err);
+          return;
+        }
+        await Promise.allSettled([
+          fetchBTC15Decisions(),
+          fetchBTC15Trades(),
+          fetchBTC15Status(),
+        ]);
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = oldText || 'Create Demo Event'; }
+      }
+    }
+
+    let btc15TelemetryVisible = false;
+    function toggleBTC15Telemetry() { btc15TelemetryVisible = !btc15TelemetryVisible; document.getElementById('btc15TelemetrySection').style.display = btc15TelemetryVisible ? 'block' : 'none'; document.getElementById('btc15TelToggleBtn').textContent = btc15TelemetryVisible ? 'Hide' : 'Show'; if (btc15TelemetryVisible) fetchBTC15Telemetry(); }
+
+    function fmtAge(sec) { if (sec===null || sec===undefined) return '-'; if (sec < 1) return '<1s'; if (sec < 120) return Math.floor(sec)+'s'; return Math.floor(sec/60)+'m '+(Math.floor(sec)%60)+'s'; }
+
+    // Lightweight ring buffer for Ops calculations (avg tick + edge starvation)
+    const _btc15Samples = [];
+    function _pushBTC15Sample(latest) {
+      const nowMs = Date.now();
+      // Sidecar stores ts_unix as milliseconds. Be defensive if older rows are seconds.
+      let tsu = (typeof latest.ts_unix === 'number' && isFinite(latest.ts_unix)) ? latest.ts_unix : nowMs;
+      if (tsu < 1e12) tsu = tsu * 1000;
+      _btc15Samples.unshift({
+        ts_unix: tsu,
+        tick_ms: (typeof latest.tick_ms === 'number' && isFinite(latest.tick_ms)) ? latest.tick_ms : null,
+        edges_seen: (typeof latest.edges_seen === 'number' && isFinite(latest.edges_seen)) ? latest.edges_seen : 0,
+        tradeable_markets: (typeof latest.tradeable_markets === 'number' && isFinite(latest.tradeable_markets)) ? latest.tradeable_markets : 0,
+      });
+      if (_btc15Samples.length > 40) _btc15Samples.length = 40;
+    }
+
+    function _avgTickMsLast(n) {
+      const xs = _btc15Samples.slice(0, n).map(s => s.tick_ms).filter(v => v !== null);
+      if (!xs.length) return null;
+      return xs.reduce((a,b)=>a+b, 0) / xs.length;
+    }
+
+    function _edgeStarvationActive(windowSec) {
+      const nowMs = Date.now();
+      const windowMs = windowSec * 1000;
+      const window = _btc15Samples.filter(s => (nowMs - s.ts_unix) <= windowMs);
+      if (!window.length) return false;
+      const anyTradeable = window.some(s => (s.tradeable_markets || 0) > 0);
+      const edgesSum = window.reduce((a,s)=>a+(s.edges_seen||0), 0);
+      return anyTradeable && edgesSum === 0;
+    }
+
+    function _renderBadges(labels) {
+      if (!labels.length) return '-';
+      return labels.map(l => {
+        const cls = (l === 'WS DOWN' || l === 'NO BOOKS') ? 'badge-danger' : 'badge-success';
+        return '<span class="badge '+cls+'" style="margin-left:6px">'+l+'</span>';
+      }).join('');
+    }
+
+    async function fetchBTC15TelemetryLatest() {
+      try {
+        const data = await fetchJson(API_BASE+'/btc15/telemetry/latest');
+        const latest = data.telemetry;
+        if (!latest) return;
+
+        _pushBTC15Sample(latest);
+
+        const age = (latest.ws_last_msg_ts ? (Date.now()/1000 - latest.ws_last_msg_ts) : null);
+        const wsFlowOk = !!latest.ws_connected && (age === null || age <= 10);
+        document.getElementById('btc15WsStatus').innerHTML = wsFlowOk ? '<span class="badge badge-success">CONNECTED</span>' : '<span class="badge badge-danger">DOWN</span>';
+        document.getElementById('btc15WsAge').textContent = fmtAge(age);
+        document.getElementById('btc15Mode').textContent = latest.event_driven ? 'Event-driven' : 'Polling';
+        document.getElementById('btc15TickMs').textContent = (latest.tick_ms!==null && latest.tick_ms!==undefined) ? Math.round(latest.tick_ms)+'ms' : '-';
+        const avg = _avgTickMsLast(20);
+        document.getElementById('btc15AvgTickMs').textContent = avg!==null ? Math.round(avg)+'ms' : '-';
+
+        const tm = latest.tradeable_markets ?? '-';
+        const em = latest.evaluated_markets ?? '-';
+        document.getElementById('btc15Eval').textContent = em + ' / ' + tm;
+        document.getElementById('btc15Dirty').textContent = (latest.dirty_tokens ?? '-') + '';
+        document.getElementById('btc15Reqs').textContent = 'G'+(latest.gamma_calls??0)+'/C'+(latest.clob_calls??0)+'/S'+(latest.sidecar_posts??0);
+        document.getElementById('btc15Edges').textContent = (latest.edges_seen??0) + ' / ' + (latest.edges_actionable??0);
+
+        const avgTick = avg !== null ? avg : 0;
+        const eff = ((latest.edges_actionable ?? 0) / Math.max(1, avgTick)) * 1000;
+        document.getElementById('btc15Efficiency').textContent = isFinite(eff) ? eff.toFixed(1) : '-';
+
+        const alerts = [];
+        if (age !== null && age > 10) alerts.push('WS DOWN');
+        if (avg !== null && avg > 800) alerts.push('SLOW TICK');
+        if ((latest.tradeable_markets ?? 0) > 0 && (latest.evaluated_markets ?? 0) === 0) alerts.push('NO BOOKS');
+        if (_edgeStarvationActive(180)) alerts.push('EDGE STARVATION');
+        document.getElementById('btc15Alerts').innerHTML = _renderBadges(alerts);
+
+        let actionsTxt = '';
+        try {
+          const arr = JSON.parse(latest.actions_taken || '[]');
+          actionsTxt = Array.isArray(arr) ? (arr.length ? (arr[0].slice(0, 32) + (arr[0].length>32?'…':'')) : '-') : '-';
+        } catch { actionsTxt = (latest.actions_taken || '-'); }
+        document.getElementById('btc15Actions').textContent = actionsTxt;
+        document.getElementById('btc15LastError').textContent = latest.last_error ? String(latest.last_error).slice(0, 60) : '-';
+      } catch(e) {
+        // Silent; dashboard should still work even if sidecar doesn't have telemetry yet.
+      }
+    }
+
+    async function fetchBTC15Telemetry() {
+      // History view only (used by BTC15 Telemetry table)
+      if (!btc15TelemetryVisible) return;
+      try {
+        const data = await fetchJson(API_BASE+'/btc15/telemetry?limit=25');
+        const rows = data.telemetry || [];
+        const tbody = document.getElementById('btc15TelemetryBody');
+        if (!rows.length) {
+          tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--text-muted)">No telemetry yet</td></tr>';
+          return;
+        }
+        tbody.innerHTML = rows.slice(0, 25).map(r => {
+          const time = r.ts ? new Date(r.ts).toLocaleTimeString() : '-';
+          const ws = r.ws_connected ? '✅' : '❌';
+          const mode = r.event_driven ? 'Event' : 'Poll';
+          const tick = (r.tick_ms!==null && r.tick_ms!==undefined) ? Math.round(r.tick_ms) : '-';
+          const edge = (r.edges_seen??0) + '/' + (r.edges_actionable??0);
+          const reqs = 'G'+(r.gamma_calls??0)+' C'+(r.clob_calls??0)+' S'+(r.sidecar_posts??0);
+          let actions = '';
+          try {
+            const arr = JSON.parse(r.actions_taken || '[]');
+            actions = Array.isArray(arr) ? (arr.length ? (arr[0].slice(0, 18) + (arr[0].length>18?'…':'')) : '-') : '-';
+          } catch { actions = (r.actions_taken || '-'); }
+          const err = r.last_error ? String(r.last_error).slice(0, 30) : '-';
+          return '<tr>'+
+            '<td>'+time+'</td>'+
+            '<td>'+ws+'</td>'+
+            '<td>'+mode+'</td>'+
+            '<td class="mono">'+tick+'</td>'+
+            '<td class="mono">'+(r.tradeable_markets??'-')+'</td>'+
+            '<td class="mono">'+(r.evaluated_markets??'-')+'</td>'+
+            '<td class="mono">'+(r.dirty_tokens??'-')+'</td>'+
+            '<td class="mono">'+edge+'</td>'+
+            '<td class="mono">'+reqs+'</td>'+
+            '<td class="mono">'+actions+'</td>'+
+            '<td>'+err+'</td>'+
+          '</tr>';
+        }).join('');
+      } catch (e) {
+        // Silent
+      }
+    }
     function openEditModal(id,tp,sl,mh) { document.getElementById('editPosId').value=id; document.getElementById('editTp').value=tp||''; document.getElementById('editSl').value=sl||''; document.getElementById('editMaxHold').value=mh||''; document.getElementById('editModal').classList.add('active'); }
     function closeModal() { document.getElementById('editModal').classList.remove('active'); }
     async function saveOverrides() { const id=document.getElementById('editPosId').value; const tp=document.getElementById('editTp').value||null; const sl=document.getElementById('editSl').value||null; const mh=document.getElementById('editMaxHold').value||null; await fetch(API_BASE+'/positions/'+id+'/overrides',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tp_pct:tp?parseFloat(tp):null,sl_pct:sl?parseFloat(sl):null,max_hold:mh?parseFloat(mh):null})}); closeModal(); fetchPositionsWithPrices(); }
-    fetchBotStatus(); fetchExitManagerStatus(); fetchPositionsWithPrices(); fetchEquityHistory(); fetchActivity(); fetchBTC15Status();
-    setInterval(fetchBotStatus,3000); setInterval(fetchExitManagerStatus,3000); setInterval(fetchPositionsWithPrices,10000); setInterval(fetchEquityHistory,30000); setInterval(fetchActivity,5000); setInterval(fetchBTC15Status,5000); setInterval(() => { if (btc15TradesVisible) fetchBTC15Trades(); }, 15000);
+    fetchBotStatus(); fetchExitManagerStatus(); fetchPositionsWithPrices(); fetchEquityHistory(); fetchActivity(); fetchBTC15Status(); fetchBTC15TelemetryLatest(); fetchBTC15Decisions(); probeBTC15DemoEnabled();
+    setInterval(fetchBotStatus,3000); setInterval(fetchExitManagerStatus,3000); setInterval(fetchPositionsWithPrices,10000); setInterval(fetchEquityHistory,30000); setInterval(fetchActivity,5000); setInterval(fetchBTC15Status,5000);
+    setInterval(fetchBTC15TelemetryLatest,5000);
+    setInterval(fetchBTC15Decisions,2500);
+    setInterval(probeBTC15DemoEnabled, 10000);
+    setInterval(() => { if (btc15TradesVisible) fetchBTC15Trades(); }, 15000);
+    setInterval(() => { if (btc15TelemetryVisible) fetchBTC15Telemetry(); }, 10000);
   </script>
 </body>
 </html>

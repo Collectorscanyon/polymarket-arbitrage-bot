@@ -1,0 +1,58 @@
+17:26:51 [INFO] bot.strategies.btc15_cache: [BTC15Cache] NEW market: btc-updown-15m-1765671300 (expires in 1443.1 min)
+17:26:51 [INFO] bot.strategies.btc15_cache: [BTC15Cache] NEW market: btc-updown-15m-1765670400 (expires in 1428.1 min)
+17:26:51 [INFO] bot.strategies.btc15_cache: [BTC15Cache] NEW market: btc-updown-15m-1765669500 (expires in 1413.1 min)
+17:26:51 [INFO] bot.strategies.btc15_cache: [BTC15Cache] NEW market: btc-updown-15m-1765668600 (expires in 1398.1 min)
+17:26:51 [INFO] bot.strategies.btc15_cache: [BTC15Cache] NEW market: btc-updown-15m-1765667700 (expires in 1383.1 min)
+17:26:51 [INFO] bot.strategies.btc15_cache: [BTC15Cache] NEW market: btc-updown-15m-1765666800 (expires in 1368.1 min)
+17:26:51 [INFO] bot.strategies.btc15_cache: [BTC15Cache] NEW market: btc-updown-15m-1765665900 (expires in 1353.1 min)
+17:26:51 [INFO] bot.strategies.btc15_cache: [BTC15Cache] NEW market: btc-updown-15m-1765665000 (expires in 1338.1 min)
+17:26:51 [INFO] bot.strategies.btc15_cache: [BTC15Cache] NEW market: btc-updown-15m-1765664100 (expires in 1323.1 min)
+17:26:51 [INFO] bot.strategies.btc15_cache: [BTC15Cache] NEW market: btc-updown-15m-1765663200 (expires in 1308.1 min)
+17:26:51 [INFO] bot.strategies.btc15_cache: [BTC15Cache] NEW market: btc-updown-15m-1765662300 (expires in 1293.1 min)
+17:26:51 [INFO] bot.strategies.btc15_cache: [BTC15Cache] NEW market: btc-updown-15m-1765661400 (expires in 1278.1 min)
+17:26:53 [INFO] bot.strategies.btc15_cache: [BTC15Cache] NEW market (deterministic): btc-updown-15m-1765584900 (expires in 3.1 min)
+17:26:53 [INFO] bot.strategies.btc15_cache: [BTC15Cache] NEW market (deterministic): btc-updown-15m-1765584000 (expires in 0.0 min)
+17:26:53 [INFO] bot.strategies.btc15_cache: [BTC15Cache] NEW market (deterministic): btc-updown-15m-1765585800 (expires in 18.1 min)
+17:26:53 [INFO] bot.strategies.btc15_cache: [BTC15Cache] NEW market (deterministic): btc-updown-15m-1765586700 (expires in 33.1 min)
+17:26:53 [INFO] bot.strategies.btc15_metrics: [METRICS] tick=1 dur=1075ms mkts=1 opps=0/0 reqs=G1/C2/S0 edge=0.0c
+17:26:53 [INFO] websocket: Websocket connected
+============================================================
+BTC15 OPTIMIZED SCANNER - TEST RUN
+============================================================
+
+[1] Refreshing active set cache...
+    Found 12 new markets
+    Total cached: 12
+    Tradeable (2-14 min): 0
+    Upcoming (14-30 min): 0
+
+[2] No active BTC15 markets found
+    (btc-updown-15m markets may not be live right now)
+    Next market in: 1278 min
+
+[3] Testing CLOB orderbook fetch...
+    Failed to fetch orderbook (may not have liquidity yet)
+
+[4] Running 1 scan ticks (interval: 1.0s)...
+
+--- Tick 1/1 ---
+    Markets scanned: 15
+    Opportunities: 0 found, 0 actioned
+    Best edge: 0.0 cents
+
+============================================================
+SUMMARY
+============================================================
+
+Cache Stats:
+  Active markets: 15
+  Total refreshes: 2
+  New slugs found: 16
+
+CLOB Requests: 0
+
+Metrics (last 60min):
+  Ticks: 1
+  Avg tick duration: 1075ms
+  Opportunities: 0 seen, 0 actioned
+  Requests/min: Gamma=28.8, CLOB=57.5

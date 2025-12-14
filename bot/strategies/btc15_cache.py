@@ -11,6 +11,7 @@ Update logic:
 - Only fetch full details for NEW slugs
 """
 
+import json
 import logging
 import time
 from dataclasses import dataclass, field
@@ -31,6 +32,57 @@ except ImportError:
 log = logging.getLogger(__name__)
 
 GAMMA_API_BASE = "https://gamma-api.polymarket.com"
+
+
+def normalize_token_ids(value: Any) -> List[str]:
+    """Normalize token IDs into a list of strings.
+
+    Gamma sometimes returns clobTokenIds as a JSON-encoded string (e.g. '["123","456"]').
+    If treated as an iterable string, code will iterate character-by-character, producing
+    token_id values like '[' and '"' and breaking CLOB /book requests.
+    """
+
+    if value is None:
+        return []
+
+    if isinstance(value, str):
+        s = value.strip()
+        if not s:
+            return []
+
+        decode_failed = object()
+        try:
+            decoded = json.loads(s)
+        except Exception:
+            decoded = decode_failed
+
+        if decoded is decode_failed:
+            token = s.strip().strip('"')
+            return [token] if token else []
+
+        # JSON null
+        if decoded is None:
+            return []
+
+        # JSON string like '"123"'
+        if isinstance(decoded, str):
+            token = decoded.strip().strip('"')
+            return [token] if token else []
+
+        value = decoded
+
+    if isinstance(value, (list, tuple)):
+        out: List[str] = []
+        for item in value:
+            if item is None:
+                continue
+            token = str(item).strip().strip('"')
+            if token:
+                out.append(token)
+        return out
+
+    token = str(value).strip().strip('"')
+    return [token] if token else []
 
 
 @dataclass
@@ -143,6 +195,11 @@ class BTC15ActiveSetCache:
                 # Check if we've already cached this
                 if slug in self._markets:
                     # Update volume/last_updated but don't re-fetch full details
+                    try:
+                        self._markets[slug].token_ids = normalize_token_ids(self._markets[slug].token_ids)
+                    except Exception:
+                        # Best-effort; cache sanitization must never break refresh.
+                        pass
                     self._markets[slug].last_updated = time.time()
                     continue
                 
@@ -201,6 +258,10 @@ class BTC15ActiveSetCache:
                         continue
 
                     if slug in self._markets:
+                        try:
+                            self._markets[slug].token_ids = normalize_token_ids(self._markets[slug].token_ids)
+                        except Exception:
+                            pass
                         self._markets[slug].last_updated = time.time()
                         continue
 
@@ -275,8 +336,8 @@ class BTC15ActiveSetCache:
             return None
         
         # Extract token IDs for CLOB queries
-        clob_token_ids = m.get("clobTokenIds", [])
-        if not clob_token_ids:
+        clob_token_ids = normalize_token_ids(m.get("clobTokenIds"))
+        if len(clob_token_ids) < 2:
             # Try to get from outcomes
             outcomes = m.get("outcomes", [])
             clob_token_ids = [str(i) for i in range(len(outcomes))]

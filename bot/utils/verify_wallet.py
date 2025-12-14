@@ -21,7 +21,19 @@ def _normalize_pk(pk: str) -> str:
 def derive_address_from_env(env_var: str = "POLYMARKET_PRIVATE_KEY") -> str:
     pk = os.getenv(env_var)
     if not pk:
-        raise RuntimeError(f"Missing required env var: {env_var}")
+        # Convenience: if the user put the key in repo-root .env, import config
+        # (which loads .env into os.environ) and try again.
+        try:
+            import config  # noqa: F401
+        except Exception:
+            pass
+        pk = os.getenv(env_var)
+
+    if not pk:
+        raise RuntimeError(
+            f"Missing required env var: {env_var}. "
+            "Set it in the session or add it to the repo-root .env."
+        )
     normalized = _normalize_pk(pk)
     acct = Account.from_key(normalized)
     return acct.address

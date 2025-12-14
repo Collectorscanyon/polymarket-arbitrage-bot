@@ -55,7 +55,8 @@ def main():
     scanner = get_btc15_scanner()
     
     print("[1] Refreshing active set cache...")
-    new_markets = cache.refresh(limit=100)
+    # Keep this aligned with BTC15OptimizedScanner: deterministic slugs around now.
+    new_markets = cache.refresh_deterministic(offsets=(0, -1, 1, 2))
     print(f"    Found {new_markets} new markets")
     print(f"    Total cached: {len(cache.active_markets)}")
     print(f"    Tradeable (2-14 min): {len(cache.tradeable_markets)}")
@@ -125,11 +126,23 @@ def main():
         print()
     
     # Run scan ticks
-    print(f"[4] Running {args.ticks} scan ticks (interval: {args.interval}s)...")
+    if args.ticks <= 0:
+        print(f"[4] Running scan ticks indefinitely (interval: {args.interval}s)...")
+    else:
+        print(f"[4] Running {args.ticks} scan ticks (interval: {args.interval}s)...")
     print()
-    
-    for i in range(args.ticks):
-        print(f"--- Tick {i+1}/{args.ticks} ---")
+
+    tick_index = 0
+    while True:
+        if args.ticks > 0 and tick_index >= args.ticks:
+            break
+
+        tick_index += 1
+        if args.ticks > 0:
+            print(f"--- Tick {tick_index}/{args.ticks} ---")
+        else:
+            print(f"--- Tick {tick_index} ---")
+
         result = run_btc15_scan()
         print(f"    Markets scanned: {result.markets_scanned}")
         print(f"    Opportunities: {result.opportunities_found} found, {result.opportunities_actioned} actioned")
@@ -138,26 +151,25 @@ def main():
             for action in result.actions_taken:
                 print(f"    ACTION: {action}")
         print()
-        
-        if i < args.ticks - 1:
-            time.sleep(args.interval)
-    
+
+        time.sleep(args.interval)
+
     # Print summary
     print("=" * 60)
     print("SUMMARY")
     print("=" * 60)
     print()
-    
+
     cache_stats = cache.get_stats()
     print("Cache Stats:")
     print(f"  Active markets: {cache_stats['active_count']}")
     print(f"  Total refreshes: {cache_stats['refresh_count']}")
     print(f"  New slugs found: {cache_stats['new_slugs_found']}")
     print()
-    
+
     print(f"CLOB Requests: {clob.request_count}")
     print()
-    
+
     summary = metrics.get_summary(window_minutes=60)
     if "error" not in summary:
         print("Metrics (last 60min):")

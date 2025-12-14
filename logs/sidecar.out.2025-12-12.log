@@ -1,0 +1,8 @@
+[Bankr Sidecar] Using context wallet: 0xe05C3Cce4fbab8D6d6BCD092392b170DE3Ec09eA
+[Bankr Sidecar] Payment wallet is derived from BANKR_PAYMENT_PRIVATE_KEY (not logged for safety).
+[Bankr Sidecar] DRY_RUN mode: true
+[Bankr Sidecar] MAX_USDC_PER_PROMPT: 7
+[Bankr Sidecar] DAILY_SPEND_CAP: 32
+[Bankr Sidecar] PERPS_ENABLED: true
+[Bankr Sidecar] PERPS_MAX_LEVERAGE: 2
+Bankr sidecar listening on http://localhost:4000

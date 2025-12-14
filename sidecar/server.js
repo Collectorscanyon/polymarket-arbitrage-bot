@@ -102,6 +102,103 @@ db.exec(`
   );
 `);
 
+// --- BTC15 telemetry (scanner/WS health) ---
+db.exec(`
+  CREATE TABLE IF NOT EXISTS btc15_telemetry (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts TEXT,
+    ts_unix INTEGER,
+    ws_connected INTEGER,
+    ws_last_msg_ts REAL,
+    event_driven INTEGER,
+    tick_ms REAL,
+    tradeable_markets INTEGER,
+    evaluated_markets INTEGER,
+    dirty_tokens INTEGER,
+    gamma_calls INTEGER,
+    clob_calls INTEGER,
+    sidecar_posts INTEGER,
+    edges_seen INTEGER,
+    edges_actionable INTEGER,
+    actions_taken TEXT,
+    last_error TEXT
+  );
+`);
+
+// --- BTC15 decision feed (human-readable per-market decisions) ---
+db.exec(`
+  CREATE TABLE IF NOT EXISTS btc15_decisions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts TEXT,
+    ts_unix INTEGER,
+    slug TEXT,
+    market_label TEXT,
+    code TEXT,
+    message TEXT,
+    edge_cents REAL,
+    extra_json TEXT
+  );
+`);
+
+try {
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_btc15_decisions_ts_unix ON btc15_decisions(ts_unix);`);
+} catch (e) { /* ignore */ }
+
+function pruneBTC15Decisions() {
+  const retentionHours = Number.parseFloat(process.env.BTC15_DECISIONS_RETENTION_HOURS || "168"); // default 7 days
+  if (!Number.isFinite(retentionHours) || retentionHours <= 0) return;
+  const cutoffUnixMs = Date.now() - (retentionHours * 3600 * 1000);
+  try {
+    const stmt = db.prepare(`DELETE FROM btc15_decisions WHERE ts_unix IS NOT NULL AND ts_unix < ?;`);
+    stmt.run(cutoffUnixMs);
+  } catch (e) {
+    // Best-effort
+  }
+}
+
+pruneBTC15Decisions();
+setInterval(pruneBTC15Decisions, 60 * 60 * 1000);
+
+// Backfill / upgrade older DBs that created btc15_telemetry without ts_unix
+try {
+  db.exec(`ALTER TABLE btc15_telemetry ADD COLUMN ts_unix INTEGER;`);
+} catch (e) { /* column exists */ }
+
+// Index for fast "latest" lookups and pruning
+try {
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_btc15_telemetry_ts_unix ON btc15_telemetry(ts_unix);`);
+} catch (e) { /* ignore */ }
+
+// Backfill missing ts_unix from ISO ts (milliseconds).
+// We keep everything in ms to avoid silent prune nukes.
+try {
+  db.exec(`
+    UPDATE btc15_telemetry
+    SET ts_unix = COALESCE(
+      ts_unix,
+      CAST(strftime('%s', ts) AS INTEGER) * 1000
+    )
+    WHERE ts_unix IS NULL;
+  `);
+} catch (e) { /* best-effort */ }
+
+function pruneBTC15Telemetry() {
+  const retentionHours = Number.parseFloat(process.env.BTC15_TELEMETRY_RETENTION_HOURS || "168"); // default 7 days
+  if (!Number.isFinite(retentionHours) || retentionHours <= 0) return;
+
+  const cutoffUnixMs = Date.now() - (retentionHours * 3600 * 1000);
+  try {
+    const stmt = db.prepare(`DELETE FROM btc15_telemetry WHERE ts_unix IS NOT NULL AND ts_unix < ?;`);
+    stmt.run(cutoffUnixMs);
+  } catch (e) {
+    // Best-effort; pruning must never break the sidecar.
+  }
+}
+
+// Prune on startup and hourly thereafter
+pruneBTC15Telemetry();
+setInterval(pruneBTC15Telemetry, 60 * 60 * 1000);
+
 // Add trade_id column if missing (for existing DBs)
 try {
   db.exec(`ALTER TABLE btc15_states ADD COLUMN trade_id INTEGER;`);
@@ -128,6 +225,7 @@ db.exec(`
 db.exec(`
   CREATE TABLE IF NOT EXISTS btc15_trades (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    execution_id TEXT,
     slug TEXT,
     market_label TEXT,
     opened_at TEXT,
@@ -145,6 +243,52 @@ db.exec(`
     status TEXT DEFAULT 'OPEN'
   );
 `);
+
+// Add execution_id column + unique index for idempotent simulated trades (best-effort for existing DBs)
+try {
+  db.exec(`ALTER TABLE btc15_trades ADD COLUMN execution_id TEXT;`);
+} catch (e) { /* column exists */ }
+
+try {
+  db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_btc15_trades_execution_id ON btc15_trades(execution_id);`);
+} catch (e) { /* ignore */ }
+
+function insertBTC15Telemetry(row) {
+  const stmt = db.prepare(`
+    INSERT INTO btc15_telemetry (
+      ts, ts_unix, ws_connected, ws_last_msg_ts, event_driven, tick_ms,
+      tradeable_markets, evaluated_markets, dirty_tokens,
+      gamma_calls, clob_calls, sidecar_posts,
+      edges_seen, edges_actionable,
+      actions_taken, last_error
+    ) VALUES (
+      @ts, @ts_unix, @ws_connected, @ws_last_msg_ts, @event_driven, @tick_ms,
+      @tradeable_markets, @evaluated_markets, @dirty_tokens,
+      @gamma_calls, @clob_calls, @sidecar_posts,
+      @edges_seen, @edges_actionable,
+      @actions_taken, @last_error
+    );
+  `);
+  stmt.run(row);
+}
+
+function getBTC15Telemetry(limit) {
+  const stmt = db.prepare(`
+    SELECT * FROM btc15_telemetry
+    ORDER BY id DESC
+    LIMIT ?;
+  `);
+  return stmt.all(limit);
+}
+
+function getLatestBTC15Telemetry() {
+  const stmt = db.prepare(`
+    SELECT * FROM btc15_telemetry
+    ORDER BY ts_unix DESC
+    LIMIT 1;
+  `);
+  return stmt.get();
+}
 
 // --- BTC15 State Helpers ---
 function loadBTC15States() {
@@ -174,6 +318,21 @@ function logBTC15Activity(activity) {
 
 // --- BTC15 Trade Helpers (for stats & PnL) ---
 function insertBTC15OpenTrade(trade) {
+  // If execution_id is provided, use it for idempotency across restarts.
+  const hasExecId = trade && typeof trade.execution_id === 'string' && trade.execution_id.length > 0;
+  if (hasExecId) {
+    const stmt = db.prepare(`
+      INSERT INTO btc15_trades
+      (execution_id, slug, market_label, opened_at, entry_side, entry_price, size_shares, total_cost, mode, status)
+      VALUES (@execution_id, @slug, @market_label, @opened_at, @entry_side, @entry_price, @size_shares, @total_cost, @mode, 'OPEN')
+      ON CONFLICT(execution_id) DO NOTHING
+    `);
+    const info = stmt.run(trade);
+    if (info.lastInsertRowid) return info.lastInsertRowid;
+    const existing = db.prepare(`SELECT id FROM btc15_trades WHERE execution_id = ?`).get(trade.execution_id);
+    return existing?.id || null;
+  }
+
   const stmt = db.prepare(`
     INSERT INTO btc15_trades
     (slug, market_label, opened_at, entry_side, entry_price, size_shares, total_cost, mode, status)
@@ -181,6 +340,34 @@ function insertBTC15OpenTrade(trade) {
   `);
   const info = stmt.run(trade);
   return info.lastInsertRowid;
+}
+
+function insertBTC15Decision(d) {
+  const stmt = db.prepare(`
+    INSERT INTO btc15_decisions
+    (ts, ts_unix, slug, market_label, code, message, edge_cents, extra_json)
+    VALUES (@ts, @ts_unix, @slug, @market_label, @code, @message, @edge_cents, @extra_json)
+  `);
+  const info = stmt.run(d);
+  return info.lastInsertRowid;
+}
+
+function getBTC15Decisions(limit) {
+  const stmt = db.prepare(`
+    SELECT * FROM btc15_decisions
+    ORDER BY ts_unix DESC, id DESC
+    LIMIT ?;
+  `);
+  return stmt.all(limit);
+}
+
+function getLatestBTC15Decision() {
+  const stmt = db.prepare(`
+    SELECT * FROM btc15_decisions
+    ORDER BY ts_unix DESC, id DESC
+    LIMIT 1;
+  `);
+  return stmt.get();
 }
 
 function updateBTC15OnHedge(id, fields) {
@@ -445,6 +632,10 @@ app.use(express.json());
 app.use("/dashboard", express.static(path.join(__dirname, "dashboard")));
 
 const PORT = process.env.PORT || 4000;
+// Windows often resolves localhost to ::1 (IPv6). Listening on "::" accepts IPv6
+// and typically IPv4-mapped connections too, avoiding "connected but unreachable"
+// issues when binding only to IPv4.
+const HOST = process.env.HOST || "::";
 
 const paymentPrivateKey = process.env.BANKR_PAYMENT_PRIVATE_KEY;
 const contextWallet = process.env.BANKR_CONTEXT_WALLET;
@@ -479,6 +670,52 @@ function isBotRunning() {
 }
 
 const BOT_ROOT = path.join(__dirname, "..");
+
+function runCommandCapture(command, { cwd, timeoutMs = 30000 } = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, {
+      cwd,
+      shell: true,
+      windowsHide: true,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+
+    let stdout = "";
+    let stderr = "";
+
+    const timeout = setTimeout(() => {
+      try {
+        child.kill("SIGKILL");
+      } catch {
+        // ignore
+      }
+      reject(new Error(`timeout after ${timeoutMs}ms`));
+    }, timeoutMs);
+
+    child.stdout.on("data", (d) => {
+      stdout += d.toString();
+    });
+
+    child.stderr.on("data", (d) => {
+      stderr += d.toString();
+    });
+
+    child.on("error", (err) => {
+      clearTimeout(timeout);
+      reject(err);
+    });
+
+    child.on("close", (code) => {
+      clearTimeout(timeout);
+      if (code !== 0) {
+        const msg = (stderr || stdout || "").trim();
+        reject(new Error(msg ? `exit ${code}: ${msg}` : `exit ${code}`));
+        return;
+      }
+      resolve(stdout);
+    });
+  });
+}
 
 // Activity log (ring buffer, max 100 entries)
 const activityLog = [];
@@ -784,15 +1021,12 @@ app.get("/positions/with-prices", async (req, res) => {
   const pythonCmd = process.env.PYTHON_CMD || "python";
   
   try {
-    const { execSync } = await import("child_process");
-    const result = execSync(`${pythonCmd} -m bot.positions_with_prices`, {
+    const result = await runCommandCapture(`${pythonCmd} -m bot.positions_with_prices`, {
       cwd: BOT_ROOT,
-      encoding: "utf-8",
-      timeout: 30000,
-      shell: process.platform === "win32",
+      timeoutMs: 30000,
     });
-    
-    const data = JSON.parse(result.trim());
+
+    const data = JSON.parse((result || "").trim());
     return res.json(data);
   } catch (err) {
     console.error("[Sidecar] positions/with-prices error:", err.message);
@@ -1743,6 +1977,69 @@ app.get("/fleet-status", (req, res) => {
 // BTC 15-MINUTE LOOP ENDPOINTS
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// POST /btc15/telemetry - Insert one BTC15 telemetry row (engine health/efficiency)
+app.post("/btc15/telemetry", (req, res) => {
+  try {
+    const t = req.body || {};
+
+    // Normalize ts_unix to milliseconds.
+    // - if missing: use Date.now()
+    // - if looks like seconds (< 1e12): convert to ms
+    let tsUnixMs = null;
+    if (typeof t.ts_unix === "number" && Number.isFinite(t.ts_unix)) {
+      tsUnixMs = t.ts_unix < 1e12 ? Math.round(t.ts_unix * 1000) : Math.round(t.ts_unix);
+    } else {
+      tsUnixMs = Date.now();
+    }
+
+    const row = {
+      ts: t.ts || new Date().toISOString(),
+      ts_unix: tsUnixMs,
+      ws_connected: t.ws_connected ? 1 : 0,
+      ws_last_msg_ts: (typeof t.ws_last_msg_ts === "number" ? t.ws_last_msg_ts : null),
+      event_driven: t.event_driven ? 1 : 0,
+      tick_ms: Number.isFinite(t.tick_ms) ? t.tick_ms : null,
+      tradeable_markets: Number.isFinite(t.tradeable_markets) ? t.tradeable_markets : null,
+      evaluated_markets: Number.isFinite(t.evaluated_markets) ? t.evaluated_markets : null,
+      dirty_tokens: Number.isFinite(t.dirty_tokens) ? t.dirty_tokens : null,
+      gamma_calls: Number.isFinite(t.gamma_calls) ? t.gamma_calls : null,
+      clob_calls: Number.isFinite(t.clob_calls) ? t.clob_calls : null,
+      sidecar_posts: Number.isFinite(t.sidecar_posts) ? t.sidecar_posts : null,
+      edges_seen: Number.isFinite(t.edges_seen) ? t.edges_seen : null,
+      edges_actionable: Number.isFinite(t.edges_actionable) ? t.edges_actionable : null,
+      actions_taken: Array.isArray(t.actions_taken) ? JSON.stringify(t.actions_taken) : (t.actions_taken ? String(t.actions_taken) : "[]"),
+      last_error: t.last_error ? String(t.last_error).slice(0, 800) : null,
+    };
+
+    insertBTC15Telemetry(row);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// GET /btc15/telemetry/latest - Get latest telemetry row (for fast polling)
+app.get("/btc15/telemetry/latest", (req, res) => {
+  try {
+    const row = getLatestBTC15Telemetry();
+    res.json({ ok: true, telemetry: row || null });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// GET /btc15/telemetry?limit=200 - Get latest telemetry rows
+app.get("/btc15/telemetry", (req, res) => {
+  try {
+    const limitRaw = parseInt(req.query.limit) || 200;
+    const limit = Math.max(1, Math.min(1000, limitRaw));
+    const rows = getBTC15Telemetry(limit);
+    res.json({ ok: true, telemetry: rows });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 // GET /btc15/states - Get all BTC15 bracket states
 app.get("/btc15/states", (req, res) => {
   try {
@@ -1857,9 +2154,10 @@ app.get("/btc15/stats", (req, res) => {
 // POST /btc15/trade-open - Record a new BTC15 bracket entry
 app.post("/btc15/trade-open", (req, res) => {
   try {
-    const { slug, market_label, entry_side, entry_price, size_shares, opened_at, mode } = req.body;
+    const { execution_id, slug, market_label, entry_side, entry_price, size_shares, opened_at, mode } = req.body;
     const total_cost = (size_shares || 0) * (entry_price || 0);
     const id = insertBTC15OpenTrade({
+      execution_id: execution_id || null,
       slug: slug || '',
       market_label: market_label || '',
       opened_at: opened_at || new Date().toISOString(),
@@ -1870,6 +2168,129 @@ app.post("/btc15/trade-open", (req, res) => {
       mode: mode || 'DRY_RUN',
     });
     res.json({ ok: true, id });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// POST /btc15/decision - Append a decision-feed event
+app.post("/btc15/decision", (req, res) => {
+  try {
+    const d = req.body || {};
+
+    let tsUnixMs = null;
+    if (typeof d.ts_unix === "number" && Number.isFinite(d.ts_unix)) {
+      tsUnixMs = d.ts_unix < 1e12 ? Math.round(d.ts_unix * 1000) : Math.round(d.ts_unix);
+    } else {
+      tsUnixMs = Date.now();
+    }
+
+    const row = {
+      ts: d.ts || new Date().toISOString(),
+      ts_unix: tsUnixMs,
+      slug: (d.slug ? String(d.slug).slice(0, 200) : null),
+      market_label: (d.market_label ? String(d.market_label).slice(0, 300) : null),
+      code: (d.code ? String(d.code).slice(0, 60) : "UNKNOWN"),
+      message: (d.message ? String(d.message).slice(0, 800) : ""),
+      edge_cents: (typeof d.edge_cents === 'number' && Number.isFinite(d.edge_cents)) ? d.edge_cents : null,
+      extra_json: d.extra ? JSON.stringify(d.extra).slice(0, 2000) : null,
+    };
+
+    const id = insertBTC15Decision(row);
+    res.json({ ok: true, id });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// POST /btc15/demo - Insert one synthetic decision + one synthetic SIM trade (demo-only)
+app.post("/btc15/demo", (req, res) => {
+  try {
+    if (process.env.DEMO_MODE !== "true") {
+      return res.status(403).json({ ok: false, error: "DEMO_MODE disabled" });
+    }
+
+    const ts = new Date().toISOString();
+    const tsUnixMs = Date.now();
+    const slug = `demo-btc15-${tsUnixMs}`;
+    const marketLabel = "DEMO BTC15 (synthetic)";
+
+    // Insert ONE decision row (clearly labeled)
+    insertBTC15Decision({
+      ts,
+      ts_unix: tsUnixMs,
+      slug,
+      market_label: marketLabel,
+      code: "ACTIONABLE",
+      message: "DEMO: synthetic edge for dashboard validation",
+      edge_cents: 2.5,
+      extra_json: JSON.stringify({ demo: true, edge_cents: 2.5, book: "SIMULATED" }).slice(0, 2000),
+    });
+
+    // Insert ONE SIM trade row and mark it resolved so it shows immediately.
+    // This does not touch CLOB, wallets, or sidecar prompts.
+    const sizeShares = 3;
+    const entryPrice = 0.49;
+    const hedgePrice = 0.48;
+    const entryCost = sizeShares * entryPrice;
+    const hedgeCost = sizeShares * hedgePrice;
+    const totalCost = entryCost + hedgeCost;
+    const payout = sizeShares;
+    const realizedPnl = payout - totalCost;
+
+    const tradeId = insertBTC15OpenTrade({
+      execution_id: slug,
+      slug,
+      market_label: marketLabel,
+      opened_at: ts,
+      entry_side: "UP",
+      entry_price: entryPrice,
+      size_shares: sizeShares,
+      total_cost: entryCost,
+      mode: "SIM",
+    });
+
+    updateBTC15OnHedge(tradeId, {
+      hedged_at: ts,
+      hedge_side: "DOWN",
+      hedge_price: hedgePrice,
+      total_cost: totalCost,
+    });
+
+    resolveBTC15Trade(tradeId, {
+      resolved_at: ts,
+      payout: payout,
+      realized_pnl: realizedPnl,
+    });
+
+    return res.json({ ok: true, slug, trade_id: tradeId });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: String(err?.message || err) });
+  }
+});
+
+// GET /btc15/demo/status - Used by dashboard to show/hide demo controls
+app.get("/btc15/demo/status", (req, res) => {
+  return res.json({ ok: true, enabled: process.env.DEMO_MODE === "true" });
+});
+
+// GET /btc15/decisions/latest - Get latest decision event
+app.get("/btc15/decisions/latest", (req, res) => {
+  try {
+    const row = getLatestBTC15Decision();
+    res.json({ ok: true, decision: row || null });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// GET /btc15/decisions?limit=200 - Get recent decision events
+app.get("/btc15/decisions", (req, res) => {
+  try {
+    const limitRaw = parseInt(req.query.limit) || 200;
+    const limit = Math.max(1, Math.min(1000, limitRaw));
+    const rows = getBTC15Decisions(limit);
+    res.json({ ok: true, decisions: rows });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
   }
@@ -1964,6 +2385,6 @@ app.get("/btc15/trades", (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, HOST, () => {
   console.log(`Bankr sidecar listening on http://localhost:${PORT}`);
 });
